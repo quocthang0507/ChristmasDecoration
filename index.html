@@ -4,10 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Christmas Lights Tree</title>
+    <link rel="stylesheet" href="./ui.css" />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <canvas id="scene" aria-label="Christmas lights tree canvas"></canvas>
+
+    <nav class="nav" aria-label="Điều hướng">
+      <a class="nav__link nav__link--active" href="./index.html">Cây thông</a>
+      <a class="nav__link" href="./card.html">Thiệp chúc mừng</a>
+    </nav>
 
     <div class="controls" aria-label="Tùy biến cây thông">
       <div class="controls__header">
@@ -117,6 +123,8 @@
 
     <audio id="bgm" preload="auto" playsinline></audio>
 
-    <script src="./main.js" defer></script>
+    <script src="./ui.js" defer></script>
+    <script src="./scene.js" defer></script>
+    <script src="./index.js" defer></script>
   </body>
 </html>

@@ -818,14 +818,13 @@
 
     // Panel collapse/expand (mobile-friendly)
     if (controlsPanel && elPanelToggle) {
-      const mq = window.matchMedia('(max-width: 600px)');
       const saved = loadPanelCollapsed();
-      const initialCollapsed = saved !== null ? saved : mq.matches;
+      const initialCollapsed = saved !== null ? saved : true;
 
       function setCollapsed(collapsed) {
         controlsPanel.classList.toggle('is-collapsed', collapsed);
         elPanelToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        elPanelToggle.textContent = collapsed ? 'Mở' : 'Đóng';
+        elPanelToggle.textContent = collapsed ? 'Tùy biến' : 'Thu gọn';
         savePanelCollapsed(collapsed);
       }
 

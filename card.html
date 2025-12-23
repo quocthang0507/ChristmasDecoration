@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Thiệp chúc mừng Giáng Sinh</title>
+    <link rel="stylesheet" href="./ui.css" />
+    <link rel="stylesheet" href="./card.css" />
+  </head>
+  <body class="page-card">
+    <canvas id="scene" aria-label="Christmas lights tree canvas"></canvas>
+
+    <nav class="nav" aria-label="Điều hướng">
+      <a class="nav__link" href="./index.html">Cây thông</a>
+      <a class="nav__link nav__link--active" href="./card.html">Thiệp chúc mừng</a>
+    </nav>
+
+    <main class="card-ui" aria-label="Thiệp chúc mừng">
+      <section class="card-ui__panel" aria-label="Tuỳ chỉnh thiệp">
+        <div class="card-ui__header">
+          <div class="card-ui__title">Thiệp chúc mừng</div>
+          <button id="card-panel-toggle" class="card-ui__toggle" type="button" aria-expanded="true">
+            Panel
+          </button>
+        </div>
+
+        <label class="card-ui__row">
+          <span class="card-ui__label">Người nhận</span>
+          <input id="card-to" class="card-ui__input" type="text" placeholder="Ví dụ: Linh" autocomplete="name" />
+        </label>
+
+        <label class="card-ui__row">
+          <span class="card-ui__label">Người gửi</span>
+          <input id="card-from" class="card-ui__input" type="text" placeholder="Ví dụ: Thắng" autocomplete="name" />
+        </label>
+
+        <label class="card-ui__row">
+          <span class="card-ui__label">Lời chúc</span>
+          <select id="card-msg" class="card-ui__select" aria-label="Chọn lời chúc"></select>
+        </label>
+
+        <label class="card-ui__row" id="card-custom-wrap">
+          <span class="card-ui__label">Tự nhập lời chúc</span>
+          <textarea id="card-custom" class="card-ui__textarea" rows="3" placeholder="Viết lời chúc của bạn..."></textarea>
+        </label>
+
+        <label class="card-ui__row">
+          <span class="card-ui__label">Kiểu thiệp</span>
+          <select id="card-style" class="card-ui__select" aria-label="Chọn kiểu thiệp">
+            <option value="classic">Classic</option>
+            <option value="cozy">Cozy</option>
+            <option value="night">Night</option>
+          </select>
+        </label>
+
+        <label class="card-ui__row">
+          <span class="card-ui__label">Căn chữ</span>
+          <select id="card-align" class="card-ui__select" aria-label="Căn chữ">
+            <option value="left">Trái</option>
+            <option value="center">Giữa</option>
+          </select>
+        </label>
+
+        <label class="card-ui__row card-ui__row--toggle">
+          <span class="card-ui__label">Hiện tiêu đề</span>
+          <input id="card-badge" type="checkbox" checked />
+        </label>
+
+        <label class="card-ui__row">
+          <span class="card-ui__label">Độ mờ thiệp</span>
+          <input id="card-alpha" type="range" min="0.22" max="0.72" step="0.01" />
+          <span id="card-alpha-val" class="card-ui__val"></span>
+        </label>
+
+        <label class="card-ui__row">
+          <span class="card-ui__label">Blur nền thiệp</span>
+          <input id="card-blur" type="range" min="0" max="22" step="1" />
+          <span id="card-blur-val" class="card-ui__val"></span>
+        </label>
+
+        <button id="card-copy" class="card-ui__btn" type="button">Copy link</button>
+        <div id="card-status" class="card-ui__status" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="card" aria-label="Xem trước thiệp">
+        <div class="card__inner" id="card-preview">
+          <div class="card__badge" id="card-badge-preview">Merry Christmas</div>
+          <h1 class="card__headline">
+            Merry Christmas,
+            <span id="card-to-preview" class="card__to">bạn</span>
+            !
+          </h1>
+          <p id="card-msg-preview" class="card__msg"></p>
+          <div class="card__footer">
+            <span id="card-from-preview">— from ChristmasDecoration —</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./ui.js" defer></script>
+    <script src="./scene.js" defer></script>
+    <script src="./card.js" defer></script>
+  </body>
+</html>

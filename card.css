@@ -1,0 +1,122 @@
+/* Card page layout + preview styles.
+   Note: the corner panel styles are shared in ui.css via .card-ui__panel. */
+
+.card-ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.card {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.card__inner {
+  width: min(760px, calc(100vw - 48px));
+  padding: 34px 34px 28px;
+  border-radius: 26px;
+  background: var(--card-bg, rgba(0, 0, 0, 0.35));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.14));
+  box-shadow: var(--card-shadow, 0 18px 70px rgba(0, 0, 0, 0.5));
+  backdrop-filter: blur(var(--card-blur, 12px));
+  -webkit-backdrop-filter: blur(var(--card-blur, 12px));
+  text-align: var(--card-align, left);
+}
+
+.card__badge {
+  display: inline-block;
+  padding: 9px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--badge-border, rgba(255, 255, 255, 0.14));
+  background: var(--badge-bg, rgba(255, 255, 255, 0.06));
+}
+
+.card__badge.is-hidden {
+  display: none;
+}
+
+.card__headline {
+  margin: 14px 0 10px;
+  font-size: clamp(22px, 3.8vw, 38px);
+  line-height: 1.12;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 18px rgba(0, 0, 0, 0.55);
+}
+
+.card__to {
+  white-space: nowrap;
+}
+
+.card__msg {
+  margin: 0;
+  font-size: clamp(14px, 2.2vw, 18px);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.55);
+}
+
+.card__footer {
+  margin-top: 14px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+/* Card styles */
+#card-preview.style-classic {
+  --card-bg: rgba(0, 0, 0, var(--card-alpha, 0.35));
+  --card-border: rgba(255, 255, 255, 0.14);
+  --badge-bg: rgba(255, 255, 255, 0.06);
+  --badge-border: rgba(255, 255, 255, 0.14);
+  --card-shadow: 0 18px 70px rgba(0, 0, 0, 0.5);
+}
+
+#card-preview.style-cozy {
+  --card-bg: radial-gradient(
+    900px 500px at 20% 15%,
+    rgba(255, 206, 71, 0.10) 0%,
+    rgba(20, 12, 8, var(--card-alpha, 0.46)) 55%,
+    rgba(0, 0, 0, 0.30) 100%
+  );
+  --card-border: rgba(255, 206, 71, 0.26);
+  --badge-bg: rgba(255, 206, 71, 0.10);
+  --badge-border: rgba(255, 206, 71, 0.22);
+  --card-shadow: 0 18px 70px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 206, 71, 0.08);
+}
+
+#card-preview.style-night {
+  --card-bg: radial-gradient(
+    900px 500px at 75% 10%,
+    rgba(103, 197, 255, 0.10) 0%,
+    rgba(6, 12, 24, var(--card-alpha, 0.52)) 55%,
+    rgba(0, 0, 0, 0.30) 100%
+  );
+  --card-border: rgba(103, 197, 255, 0.26);
+  --badge-bg: rgba(103, 197, 255, 0.10);
+  --badge-border: rgba(103, 197, 255, 0.22);
+  --card-shadow: 0 18px 70px rgba(0, 0, 0, 0.5), 0 0 46px rgba(103, 197, 255, 0.10);
+}
+
+@media (max-width: 900px) {
+  /* UI panel rules live in ui.css */
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 16px;
+  }
+
+  .card__inner {
+    width: calc(100vw - 32px);
+    padding: 22px 20px 18px;
+    border-radius: 22px;
+  }
+}
