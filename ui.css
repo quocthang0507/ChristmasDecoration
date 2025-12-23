@@ -1,5 +1,49 @@
 :root {
   color-scheme: dark;
+
+  /* Theme primitives (default: dark) */
+  --page-bg: radial-gradient(1200px 800px at 50% 35%, #07101d 0%, #02040a 55%, #000 100%);
+  --scene-bg-0: #07101d;
+  --scene-bg-1: #02040a;
+  --scene-bg-2: #000;
+
+  --ui-surface: rgba(0, 0, 0, 0.38);
+  --ui-border: rgba(255, 255, 255, 0.12);
+  --ui-text: rgba(255, 255, 255, 0.82);
+  --ui-text-strong: rgba(255, 255, 255, 0.9);
+  --ui-text-muted: rgba(255, 255, 255, 0.68);
+  --ui-text-subtle: rgba(255, 255, 255, 0.6);
+
+  --ui-hover-bg: rgba(255, 255, 255, 0.06);
+  --ui-hover-border: rgba(255, 255, 255, 0.12);
+  --ui-active-border: rgba(255, 255, 255, 0.16);
+
+  --ui-control-bg: rgba(255, 255, 255, 0.06);
+  --ui-control-border: rgba(255, 255, 255, 0.16);
+}
+
+/* Light theme overrides */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --page-bg: radial-gradient(1200px 800px at 50% 35%, #f6f8ff 0%, #e9eef7 55%, #dfe6f2 100%);
+  --scene-bg-0: #f6f8ff;
+  --scene-bg-1: #e9eef7;
+  --scene-bg-2: #dfe6f2;
+
+  --ui-surface: rgba(255, 255, 255, 0.72);
+  --ui-border: rgba(0, 0, 0, 0.12);
+  --ui-text: rgba(0, 0, 0, 0.78);
+  --ui-text-strong: rgba(0, 0, 0, 0.88);
+  --ui-text-muted: rgba(0, 0, 0, 0.62);
+  --ui-text-subtle: rgba(0, 0, 0, 0.52);
+
+  --ui-hover-bg: rgba(0, 0, 0, 0.06);
+  --ui-hover-border: rgba(0, 0, 0, 0.12);
+  --ui-active-border: rgba(0, 0, 0, 0.18);
+
+  --ui-control-bg: rgba(0, 0, 0, 0.06);
+  --ui-control-border: rgba(0, 0, 0, 0.14);
 }
 
 * {
@@ -14,7 +58,7 @@ body {
 body {
   margin: 0;
   overflow: hidden;
-  background: radial-gradient(1200px 800px at 50% 35%, #07101d 0%, #02040a 55%, #000 100%);
+  background: var(--page-bg);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
     "Segoe UI Emoji";
 }
@@ -32,13 +76,15 @@ body {
   top: 58px;
   z-index: 20;
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 8px;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  max-width: min(520px, calc(100vw - 36px));
 }
 
 .nav__link {
@@ -47,20 +93,27 @@ body {
   border-radius: 10px;
   font-size: 12px;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--ui-text-muted);
   border: 1px solid rgba(255, 255, 255, 0);
 }
 
+.nav__btn {
+  appearance: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
 .nav__link:hover {
-  color: rgba(255, 255, 255, 0.86);
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--ui-text-strong);
+  border-color: var(--ui-hover-border);
+  background: var(--ui-hover-bg);
 }
 
 .nav__link--active {
-  color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--ui-text-strong);
+  border-color: var(--ui-active-border);
+  background: var(--ui-hover-bg);
 }
 
 /* Shared corner panel pattern (used by both .controls and .card-ui__panel) */
@@ -72,11 +125,11 @@ body {
   width: min(320px, calc(100vw - 36px));
   padding: 12px 12px 10px;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--ui-text);
   pointer-events: auto;
   max-height: calc(100vh - 36px);
   overflow: auto;
@@ -99,15 +152,15 @@ body {
   text-transform: uppercase;
   font-weight: 650;
   margin-bottom: 0;
-  color: rgba(255, 255, 255, 0.78);
+  color: color-mix(in srgb, var(--ui-text) 92%, transparent);
 }
 
 .controls__toggle,
 .card-ui__toggle {
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--ui-control-border);
+  background: var(--ui-control-bg);
+  color: color-mix(in srgb, var(--ui-text) 92%, transparent);
   padding: 6px 10px;
   border-radius: 10px;
   font-size: 12px;
@@ -137,13 +190,13 @@ body {
 
 .controls__label {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--ui-text-muted);
 }
 
 .controls__val {
   font-size: 12px;
   text-align: right;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ui-text-subtle);
 }
 
 .controls input[type='range'] {
@@ -160,9 +213,9 @@ body {
   margin-top: 8px;
   width: 100%;
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--ui-control-border);
+  background: var(--ui-control-bg);
+  color: var(--ui-text);
   padding: 8px 10px;
   border-radius: 10px;
   font-size: 12px;
@@ -219,9 +272,9 @@ body {
   max-width: 100%;
   min-width: 0;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--ui-control-border);
+  background: var(--ui-control-bg);
+  color: color-mix(in srgb, var(--ui-text) 96%, transparent);
   outline: none;
 }
 
@@ -242,7 +295,7 @@ body {
 
 .card-ui__val {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ui-text-subtle);
 }
 
 .card-ui__row {
@@ -259,16 +312,16 @@ body {
 
 .card-ui__label {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--ui-text-muted);
 }
 
 .card-ui__btn {
   margin-top: 10px;
   width: 100%;
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--ui-control-border);
+  background: var(--ui-control-bg);
+  color: var(--ui-text);
   padding: 10px 10px;
   border-radius: 12px;
   font-size: 13px;
@@ -281,8 +334,19 @@ body {
 .card-ui__status {
   margin-top: 8px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ui-text-subtle);
   min-height: 16px;
+}
+
+.ui__mono-big {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui__pre {
+  white-space: pre-line;
+  line-height: 1.35;
 }
 
 .controls__select {

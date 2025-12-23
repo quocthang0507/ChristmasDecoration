@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Đếm ngược đến 00:00</title>
+    <link rel="stylesheet" href="./ui.css" />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Christmas lights tree canvas"></canvas>
+
+    <nav class="nav" aria-label="Điều hướng">
+      <a class="nav__link" href="./index.html">Cây thông</a>
+      <a class="nav__link" href="./card.html">Thiệp chúc mừng</a>
+      <a class="nav__link nav__link--active" href="./countdown.html">Đếm ngược</a>
+      <a class="nav__link" href="./fireworks.html">Pháo hoa</a>
+      <a class="nav__link" href="./globe.html">Snow Globe</a>
+      <a class="nav__link" href="./benchmark.html">Benchmark</a>
+      <button id="theme-toggle" class="nav__link nav__btn" type="button" aria-label="Đổi giao diện"></button>
+    </nav>
+
+    <section class="card-ui__panel" aria-label="Đếm ngược">
+      <div class="card-ui__header">
+        <div class="card-ui__title">Đếm ngược</div>
+        <button id="countdown-panel-toggle" class="card-ui__toggle" type="button" aria-expanded="true">Panel</button>
+      </div>
+
+      <label class="card-ui__row">
+        <span class="card-ui__label">Mục tiêu</span>
+        <select id="cd-target" class="card-ui__select" aria-label="Chọn mục tiêu">
+          <option value="christmas">Giáng Sinh (25/12 00:00)</option>
+          <option value="newyear">Năm Mới (01/01 00:00)</option>
+        </select>
+      </label>
+
+      <div class="card-ui__row">
+        <span class="card-ui__label">Còn lại</span>
+        <div id="cd-time" class="card-ui__val ui__mono-big"></div>
+      </div>
+
+      <div class="card-ui__row">
+        <span class="card-ui__label">Thời điểm</span>
+        <div id="cd-when" class="card-ui__val"></div>
+      </div>
+
+      <div id="cd-status" class="card-ui__status" role="status" aria-live="polite"></div>
+    </section>
+
+    <script src="./ui.js" defer></script>
+    <script src="./scene.js" defer></script>
+    <script src="./countdown.js" defer></script>
+  </body>
+</html>

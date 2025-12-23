@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Benchmark đồ hoạ</title>
+    <link rel="stylesheet" href="./ui.css" />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Christmas lights tree canvas"></canvas>
+
+    <nav class="nav" aria-label="Điều hướng">
+      <a class="nav__link" href="./index.html">Cây thông</a>
+      <a class="nav__link" href="./card.html">Thiệp chúc mừng</a>
+      <a class="nav__link" href="./countdown.html">Đếm ngược</a>
+      <a class="nav__link" href="./fireworks.html">Pháo hoa</a>
+      <a class="nav__link" href="./globe.html">Snow Globe</a>
+      <a class="nav__link nav__link--active" href="./benchmark.html">Benchmark</a>
+      <button id="theme-toggle" class="nav__link nav__btn" type="button" aria-label="Đổi giao diện"></button>
+    </nav>
+
+    <section class="card-ui__panel" aria-label="Benchmark">
+      <div class="card-ui__header">
+        <div class="card-ui__title">Benchmark</div>
+        <button id="bench-panel-toggle" class="card-ui__toggle" type="button" aria-expanded="true">Panel</button>
+      </div>
+
+      <label class="card-ui__row card-ui__row--toggle">
+        <span class="card-ui__label">Performance</span>
+        <input id="bench-perf" type="checkbox" />
+      </label>
+
+      <button id="bench-start" class="card-ui__btn" type="button">Start</button>
+      <button id="bench-stop" class="card-ui__btn" type="button" style="display:none;">Stop</button>
+
+      <div id="bench-status" class="card-ui__status ui__pre" role="status" aria-live="polite"></div>
+      <div id="bench-result" class="card-ui__status ui__pre"></div>
+    </section>
+
+    <script src="./ui.js" defer></script>
+    <script src="./scene.js" defer></script>
+    <script src="./benchmark.js" defer></script>
+  </body>
+</html>

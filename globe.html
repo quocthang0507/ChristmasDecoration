@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Snow Globe</title>
+    <link rel="stylesheet" href="./ui.css" />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Christmas lights tree canvas"></canvas>
+
+    <nav class="nav" aria-label="Điều hướng">
+      <a class="nav__link" href="./index.html">Cây thông</a>
+      <a class="nav__link" href="./card.html">Thiệp chúc mừng</a>
+      <a class="nav__link" href="./countdown.html">Đếm ngược</a>
+      <a class="nav__link" href="./fireworks.html">Pháo hoa</a>
+      <a class="nav__link nav__link--active" href="./globe.html">Snow Globe</a>
+      <a class="nav__link" href="./benchmark.html">Benchmark</a>
+      <button id="theme-toggle" class="nav__link nav__btn" type="button" aria-label="Đổi giao diện"></button>
+    </nav>
+
+    <section class="card-ui__panel" aria-label="Snow Globe">
+      <div class="card-ui__header">
+        <div class="card-ui__title">Snow Globe</div>
+        <button id="globe-panel-toggle" class="card-ui__toggle" type="button" aria-expanded="true">Panel</button>
+      </div>
+
+      <div class="card-ui__status">Di chuột trong “quả cầu” để làm tuyết xoáy.</div>
+
+      <label class="card-ui__row card-ui__row--toggle">
+        <span class="card-ui__label">Performance</span>
+        <input id="globe-perf" type="checkbox" />
+      </label>
+    </section>
+
+    <script src="./ui.js" defer></script>
+    <script src="./scene.js" defer></script>
+    <script src="./globe.js" defer></script>
+  </body>
+</html>
