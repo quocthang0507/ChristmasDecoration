@@ -851,8 +851,9 @@
       ctx.restore();
     }
 
+    // Always ensure snow count to clear array when disabled
+    ensureSnowCount(now);
     if (state.settings?.snow) {
-      ensureSnowCount(now);
       for (const s of snow) drawSnow(s, now);
     }
 
