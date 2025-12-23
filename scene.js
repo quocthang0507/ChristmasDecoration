@@ -992,21 +992,26 @@
   }
 
   function initGyroSensor() {
-    // Only attempt on mobile/tablet devices or if gyro is explicitly supported
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (!isMobile && !window.DeviceOrientationEvent) {
+    // Check if DeviceOrientationEvent is available (feature detection)
+    if (!window.DeviceOrientationEvent) {
       state.gyro.permission = 'denied';
       return;
     }
 
-    // For devices that need permission request, wait for user interaction
-    if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
+    // For devices that need permission request (iOS 13+), wait for user interaction
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
       // iOS 13+ requires user interaction, so we'll request on first touch/click
       const requestOnInteraction = async () => {
-        const granted = await requestGyroPermission();
-        if (granted) {
-          // Remove the listener after successful permission
+        try {
+          const granted = await requestGyroPermission();
+          if (granted) {
+            // Remove the listener after successful permission
+            window.removeEventListener('click', requestOnInteraction);
+            window.removeEventListener('touchstart', requestOnInteraction);
+          }
+        } catch (error) {
+          console.warn('Error in gyro permission request:', error);
+          // Clean up listeners even on error
           window.removeEventListener('click', requestOnInteraction);
           window.removeEventListener('touchstart', requestOnInteraction);
         }
@@ -1014,7 +1019,7 @@
       
       window.addEventListener('click', requestOnInteraction, { once: true, passive: true });
       window.addEventListener('touchstart', requestOnInteraction, { once: true, passive: true });
-    } else if (window.DeviceOrientationEvent) {
+    } else {
       // For devices that don't need permission, start immediately
       state.gyro.permission = 'granted';
       state.gyro.enabled = true;
