@@ -42,6 +42,13 @@
       emaDt: 16.67,
       fps: 60,
     },
+    gyro: {
+      enabled: false,
+      permission: 'unknown', // 'unknown', 'granted', 'denied'
+      beta: 0,  // front-to-back tilt (-180 to 180)
+      gamma: 0, // left-to-right tilt (-90 to 90)
+      alpha: 0, // compass direction (0 to 360)
+    },
     settings: {
       density: 1.15,
       size: 1.1,
@@ -60,6 +67,7 @@
       // Optional modes/features (used by new pages)
       mode: 'default',
       fireworks: false,
+      gyroSnow: true, // Enable gyro-based snow effects by default
     },
     loop: {
       rafId: 0,
@@ -234,9 +242,28 @@
 
     const w = state.w;
     const h = state.h;
+    
+    const mode = String(state.settings?.mode || 'default');
+    const isGlobe = mode === 'globe';
 
-    const topY = h * 0.18;
-    const bottomY = h * 0.86;
+    // Adjust tree positioning for globe mode to fit better
+    let topY, bottomY;
+    if (isGlobe) {
+      // Globe center is at h * 0.55, radius is min(w,h) * 0.42
+      // Make tree fit within globe with some margin
+      const globeCy = h * 0.55;
+      const base = Math.min(w, h);
+      const globeR = base * 0.42;
+      
+      // Position tree to fit inside globe (with 10% margin)
+      const treeMargin = globeR * 0.9;
+      topY = globeCy - treeMargin * 0.85;  // Top of tree
+      bottomY = globeCy + treeMargin * 0.65;  // Bottom of tree (wider base)
+    } else {
+      topY = h * 0.18;
+      bottomY = h * 0.86;
+    }
+    
     const treeHeight = bottomY - topY;
     const maxR = Math.min(w, h) * 0.23;
 
@@ -487,7 +514,26 @@
     const w = state.w;
     const h = state.h;
 
-    const wind = (state.settings?.wind ?? 0) * 0.9;
+    let wind = (state.settings?.wind ?? 0) * 0.9;
+    
+    // Apply gyro sensor influence to snow if enabled
+    if (state.gyro.enabled && state.settings?.gyroSnow && state.settings?.snow) {
+      // gamma is left-to-right tilt (-90 to 90)
+      // beta is front-to-back tilt (-180 to 180)
+      const gamma = state.gyro.gamma || 0;
+      const beta = state.gyro.beta || 0;
+      
+      // Convert tilt to wind influence
+      // Normalize gamma to -1 to 1 range and add to wind
+      const gyroWind = clamp(gamma / 45, -1, 1) * 0.8;
+      
+      // Beta affects fall speed (tilt forward = faster fall)
+      const tiltFactor = clamp((beta - 45) / 45, -0.5, 0.5);
+      
+      wind += gyroWind;
+      s.vy = clamp(s.vy * (1 + tiltFactor * 0.15), 0.2, 2.5);
+    }
+    
     const boost = boostFactor01(now) * (state.boost.strength || 0);
     const boostVy = 1 + boost * 0.65;
 
@@ -902,6 +948,85 @@
     state.boost.strength = str;
   }
 
+  function handleDeviceOrientation(event) {
+    if (!state.settings?.gyroSnow || !state.gyro.enabled) return;
+    
+    // Update gyro state with device orientation
+    state.gyro.alpha = event.alpha || 0;
+    state.gyro.beta = event.beta || 0;
+    state.gyro.gamma = event.gamma || 0;
+  }
+
+  async function requestGyroPermission() {
+    // Check if DeviceOrientationEvent is available
+    if (!window.DeviceOrientationEvent) {
+      state.gyro.permission = 'denied';
+      return false;
+    }
+
+    // For iOS 13+ devices, we need to request permission
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const permission = await DeviceOrientationEvent.requestPermission();
+        if (permission === 'granted') {
+          state.gyro.permission = 'granted';
+          state.gyro.enabled = true;
+          window.addEventListener('deviceorientation', handleDeviceOrientation, { passive: true });
+          return true;
+        } else {
+          state.gyro.permission = 'denied';
+          return false;
+        }
+      } catch (error) {
+        console.warn('Error requesting device orientation permission:', error);
+        state.gyro.permission = 'denied';
+        return false;
+      }
+    } else {
+      // For other devices, just start listening
+      state.gyro.permission = 'granted';
+      state.gyro.enabled = true;
+      window.addEventListener('deviceorientation', handleDeviceOrientation, { passive: true });
+      return true;
+    }
+  }
+
+  function initGyroSensor() {
+    // Check if DeviceOrientationEvent is available (feature detection)
+    if (!window.DeviceOrientationEvent) {
+      state.gyro.permission = 'denied';
+      return;
+    }
+
+    // For devices that need permission request (iOS 13+), wait for user interaction
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS 13+ requires user interaction, so we'll request on first touch/click
+      const requestOnInteraction = async () => {
+        try {
+          const granted = await requestGyroPermission();
+          if (granted) {
+            // Remove the listener after successful permission
+            window.removeEventListener('click', requestOnInteraction);
+            window.removeEventListener('touchstart', requestOnInteraction);
+          }
+        } catch (error) {
+          console.warn('Error in gyro permission request:', error);
+          // Clean up listeners even on error
+          window.removeEventListener('click', requestOnInteraction);
+          window.removeEventListener('touchstart', requestOnInteraction);
+        }
+      };
+      
+      window.addEventListener('click', requestOnInteraction, { once: true, passive: true });
+      window.addEventListener('touchstart', requestOnInteraction, { once: true, passive: true });
+    } else {
+      // For devices that don't need permission, start immediately
+      state.gyro.permission = 'granted';
+      state.gyro.enabled = true;
+      window.addEventListener('deviceorientation', handleDeviceOrientation, { passive: true });
+    }
+  }
+
   // Rebuild background if theme changes.
   window.addEventListener(
     'cdthemechange',
@@ -914,4 +1039,5 @@
   window.CD_Scene = Object.freeze({ setSettings, getSettings, rebuild, triggerBoost });
 
   init();
+  initGyroSensor();
 })();

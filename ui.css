@@ -355,6 +355,27 @@ body {
   border-radius: 10px;
 }
 
+/* Fix select option colors for better contrast in both themes */
+.controls__select option,
+.card-ui__select option {
+  background: var(--ui-control-bg);
+  color: var(--ui-text);
+}
+
+/* Dark mode: ensure options have dark background with light text */
+:root[data-theme='dark'] .controls__select option,
+:root[data-theme='dark'] .card-ui__select option {
+  background-color: #1a1a1a;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Light mode: ensure options have light background with dark text */
+:root[data-theme='light'] .controls__select option,
+:root[data-theme='light'] .card-ui__select option {
+  background-color: #ffffff;
+  color: rgba(10, 16, 26, 0.9);
+}
+
 @media (max-width: 600px) {
   .nav {
     left: 16px;
