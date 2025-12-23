@@ -15,7 +15,7 @@
   font-weight: 650;
   font-size: 14px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--ui-text-strong);
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
 }
 
@@ -24,8 +24,13 @@
   bottom: 22px;
   left: 24px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ui-text-muted);
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
+}
+
+:root[data-theme='light'] .hud__title,
+:root[data-theme='light'] .hud__hint {
+  text-shadow: none;
 }
 
 @media (max-width: 600px) {

@@ -7,7 +7,7 @@
     glow: 1.15,
     mouse: 1.05,
     color: 1.05,
-    topper: true,
+    zoom: 1,
     snow: true,
     wind: 0.15,
     garland: true,
@@ -37,7 +37,7 @@
         glow: clamp(Number(parsed.glow ?? DEFAULT_SETTINGS.glow), 0.6, 1.9),
         mouse: clamp(Number(parsed.mouse ?? DEFAULT_SETTINGS.mouse), 0, 1.8),
         color: clamp(Number(parsed.color ?? DEFAULT_SETTINGS.color), 0, 1.6),
-        topper: Boolean(parsed.topper ?? DEFAULT_SETTINGS.topper),
+        zoom: clamp(Number(parsed.zoom ?? DEFAULT_SETTINGS.zoom), 0.7, 1.6),
         snow: Boolean(parsed.snow ?? DEFAULT_SETTINGS.snow),
         wind: clamp(Number(parsed.wind ?? DEFAULT_SETTINGS.wind), -1, 1),
         garland: Boolean(parsed.garland ?? DEFAULT_SETTINGS.garland),
@@ -184,7 +184,6 @@
     const elColor = document.getElementById('ctl-color');
     const elWind = document.getElementById('ctl-wind');
     const elSway = document.getElementById('ctl-sway');
-    const elTop = document.getElementById('ctl-top');
     const elSnow = document.getElementById('ctl-snow');
     const elGarland = document.getElementById('ctl-garland');
     const elPerf = document.getElementById('ctl-perf');
@@ -216,7 +215,6 @@
       if (elColor) elColor.value = String(settings.color);
       if (elWind) elWind.value = String(settings.wind);
       if (elSway) elSway.value = String(settings.sway);
-      if (elTop) elTop.checked = Boolean(settings.topper);
       if (elSnow) elSnow.checked = Boolean(settings.snow);
       if (elGarland) elGarland.checked = Boolean(settings.garland);
       if (elPerf) elPerf.checked = Boolean(settings.perf);
@@ -245,7 +243,7 @@
           glow: settings.glow,
           mouse: settings.mouse,
           color: settings.color,
-          topper: settings.topper,
+          zoom: settings.zoom,
           snow: settings.snow,
           wind: settings.wind,
           garland: settings.garland,
@@ -310,11 +308,6 @@
       onSettingsChange({ rebuild: false });
     });
 
-    elTop?.addEventListener('change', () => {
-      settings.topper = Boolean(elTop.checked);
-      onSettingsChange({ rebuild: true });
-    });
-
     elSnow?.addEventListener('change', () => {
       settings.snow = Boolean(elSnow.checked);
       onSettingsChange({ rebuild: true });
@@ -339,6 +332,30 @@
         audio.removeAttribute('src');
       }
     });
+
+    // Wheel zoom (tree page): smooth, lightweight camera zoom.
+    // Avoid stealing scroll when interacting with UI panels/controls.
+    function isInteractiveTarget(el) {
+      if (!el) return false;
+      if (el.closest('.controls') || el.closest('.card-ui__panel') || el.closest('.nav')) return true;
+      const tag = String(el.tagName || '').toLowerCase();
+      return tag === 'input' || tag === 'select' || tag === 'textarea' || tag === 'button';
+    }
+
+    function onWheel(e) {
+      if (isInteractiveTarget(e.target)) return;
+      // Prefer trackpad wheel: use deltaY sign only.
+      const dy = Number(e.deltaY || 0);
+      if (!dy) return;
+      // Negative deltaY typically means zoom in.
+      const step = 0.05;
+      const dir = dy < 0 ? 1 : -1;
+      settings.zoom = clamp(Number(settings.zoom || 1) + dir * step, 0.7, 1.6);
+      onSettingsChange({ rebuild: false });
+      e.preventDefault();
+    }
+
+    window.addEventListener('wheel', onWheel, { passive: false });
 
     // Music wiring (best-effort autoplay)
     let tracks = [];

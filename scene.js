@@ -19,6 +19,7 @@
     yaw: 0,
     pitch: 0,
     fov: 720,
+    baseFov: 720,
     scene: {
       topY: 0,
       bottomY: 0,
@@ -47,7 +48,7 @@
       glow: 1.15,
       mouse: 1.05,
       color: 1.05,
-      topper: true,
+      zoom: 1,
       snow: true,
       wind: 0.15,
       garland: true,
@@ -59,6 +60,10 @@
       // Optional modes/features (used by new pages)
       mode: 'default',
       fireworks: false,
+    },
+    loop: {
+      rafId: 0,
+      running: true,
     },
   };
 
@@ -209,11 +214,17 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const base = Math.min(state.w, state.h);
-    state.fov = clamp(base * 1.25, 520, 1000);
+    state.baseFov = clamp(base * 1.25, 520, 1000);
+    applyZoomToFov();
 
     rebuildBackgroundGradient();
 
     buildScene();
+  }
+
+  function applyZoomToFov() {
+    const z = clamp(Number(state.settings?.zoom ?? 1) || 1, 0.7, 1.6);
+    state.fov = clamp(state.baseFov * z, 360, 1600);
   }
 
   function buildScene() {
@@ -253,7 +264,9 @@
 
       const rr = Math.sqrt(Math.random()) * rAtY;
       const x = Math.cos(theta) * rr;
-      const z = Math.sin(theta) * rr + randBetween(-zRange, zRange) * 0.22;
+      // Keep depth jitter proportional to local radius so the silhouette
+      // still reads as a cone (random but still tree-shaped).
+      const z = Math.sin(theta) * rr + randBetween(-1, 1) * rAtY * 0.18;
 
       const radius = randBetween(0.85 * sizeMul, 3.2 * sizeMul) * (1 - t * 0.18);
       const colorIndex = Math.random() < 0.14 ? 5 : Math.floor(Math.random() * (palette.length - 1));
@@ -277,22 +290,74 @@
       );
     }
 
-    if (state.settings?.topper) {
-      // Single big topper with long rays (drawn in drawLight).
-      lights.push(
-        new Light({
-          x: 0,
-          y: topY - maxR * 0.095,
-          z: 0,
-          radius: 8.5 * sizeMul,
-          colorIndex: 5,
-          altColorIndex: 1,
-          phase: Math.random() * Math.PI * 2,
-          twinkleSpeed: 1.35,
-          colorShiftSpeed: 0,
-          kind: 'topper',
-        })
-      );
+    // Spiral garland lights (strings wrapping around the cone)
+    if (state.settings?.garland) {
+      const turns = 3.2;
+      const strands = perf ? 1 : 2;
+      const garlandCount = clamp(Math.floor(count * (perf ? 0.06 : 0.085)), 160, perf ? 700 : 1100);
+      const garlandColors = [0, 1, 3, 4];
+
+      for (let s = 0; s < strands; s++) {
+        const strandPhase = (s / Math.max(1, strands)) * Math.PI;
+        for (let i = 0; i < garlandCount; i++) {
+          const t = i / Math.max(1, garlandCount - 1);
+          const y = topY + t * treeHeight;
+          const r = t ** 0.9 * maxR * 0.94;
+          const theta = t * Math.PI * 2 * turns + strandPhase;
+
+          const j = (1 - t) * 0.6;
+          const x = Math.cos(theta) * r + randBetween(-1.2, 1.2) * j;
+          const z = Math.sin(theta) * r + randBetween(-1.2, 1.2) * j;
+
+          const colorIndex = garlandColors[Math.floor(Math.random() * garlandColors.length)];
+          lights.push(
+            new Light({
+              x,
+              y,
+              z,
+              radius: randBetween(1.05 * sizeMul, 2.6 * sizeMul),
+              colorIndex,
+              altColorIndex: 5,
+              phase: Math.random() * Math.PI * 2,
+              twinkleSpeed: randBetween(1.0, 2.2),
+              colorShiftSpeed: randBetween(0.2, 0.6),
+              kind: 'garland',
+            })
+          );
+        }
+      }
+    }
+
+    // Tree tip sparkle cluster (lightweight): keeps the top from looking empty
+    // without the expensive topper rays.
+    {
+      const perf = Boolean(state.settings?.perf);
+      const tipCount = perf ? 10 : 16;
+      for (let i = 0; i < tipCount; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = randBetween(0, maxR * 0.10) * Math.sqrt(Math.random());
+        const x = Math.cos(a) * r;
+        const z = Math.sin(a) * r * 0.45;
+        const y = topY + randBetween(-maxR * 0.03, maxR * 0.12);
+
+        const radius = randBetween(0.9 * sizeMul, 2.0 * sizeMul);
+        // Mostly white/warm near the tip.
+        const colorIndex = Math.random() < 0.75 ? 5 : 1;
+        lights.push(
+          new Light({
+            x,
+            y,
+            z,
+            radius,
+            colorIndex,
+            altColorIndex: 5,
+            phase: Math.random() * Math.PI * 2,
+            twinkleSpeed: randBetween(0.95, 1.8),
+            colorShiftSpeed: randBetween(0.15, 0.45),
+            kind: 'tree',
+          })
+        );
+      }
     }
 
     if (state.settings?.snow) {
@@ -379,99 +444,6 @@
     return `rgba(${r},${g},${b},${a})`;
   }
 
-  function drawTopperRays({ col, tw, rr, now, perf }) {
-    // Cleaner starburst: tapered rays (triangles) with gradient fills.
-    // This avoids jagged/ugly strokes and looks more like lens flare.
-
-    // Soft bloom behind everything
-    const bloom = ctx.createRadialGradient(0, 0, 0, 0, 0, rr * 26);
-    bloom.addColorStop(0, rgb(col, 0.26 + tw * 0.16));
-    bloom.addColorStop(0.14, rgb(col, 0.14 + tw * 0.10));
-    bloom.addColorStop(0.42, rgb(col, 0.06 + tw * 0.06));
-    bloom.addColorStop(1, rgb(col, 0));
-    ctx.fillStyle = bloom;
-    ctx.beginPath();
-    ctx.arc(0, 0, rr * 15, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Extra subtle outer glow to soften the rays
-    const outerGlow = ctx.createRadialGradient(0, 0, rr * 2, 0, 0, rr * 34);
-    outerGlow.addColorStop(0, rgb(col, 0.10 + tw * 0.06));
-    outerGlow.addColorStop(0.35, rgb(col, 0.04 + tw * 0.04));
-    outerGlow.addColorStop(1, rgb(col, 0));
-    ctx.fillStyle = outerGlow;
-    ctx.beginPath();
-    ctx.arc(0, 0, rr * 22, 0, Math.PI * 2);
-    ctx.fill();
-
-    function rayTriangle(angle, innerR, outerR, halfWidth, a0, a1) {
-      const ca = Math.cos(angle);
-      const sa = Math.sin(angle);
-      const px = -sa * halfWidth;
-      const py = ca * halfWidth;
-
-      const x0 = ca * innerR;
-      const y0 = sa * innerR;
-      const x1 = ca * outerR;
-      const y1 = sa * outerR;
-
-      const g = ctx.createLinearGradient(x0, y0, x1, y1);
-      g.addColorStop(0, rgb(col, a1));
-      g.addColorStop(0.35, rgb(col, a0));
-      g.addColorStop(1, rgb(col, 0));
-
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(x0 + px, y0 + py);
-      ctx.lineTo(x0 - px, y0 - py);
-      ctx.lineTo(x1, y1);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    const rayCount = perf ? 8 : 12;
-    const baseRot = now * 0.00018;
-
-    // Make rays less sharp: draw them with blur + shadow glow.
-    // (Core dot is drawn outside this function, crisp.)
-    const blurPx = rr * (perf ? 0.22 : 0.32);
-    ctx.save();
-    ctx.globalAlpha = 0.9;
-    ctx.filter = `blur(${blurPx.toFixed(2)}px)`;
-    ctx.shadowColor = rgb(col, 0.18 + tw * 0.10);
-    ctx.shadowBlur = rr * (perf ? 3.2 : 4.6);
-
-    // Long rays (soft)
-    const longOuter = rr * (27 + 11 * tw);
-    const longInner = rr * 1.8;
-    const longHalfW = rr * 0.40;
-    for (let i = 0; i < rayCount; i++) {
-      const ang = baseRot + (i / rayCount) * Math.PI * 2;
-      rayTriangle(ang, longInner, longOuter, longHalfW, 0.06 + tw * 0.06, 0.14 + tw * 0.08);
-    }
-
-    // Secondary rays (between long rays, smaller + brighter)
-    const midOuter = rr * (17 + 8 * tw);
-    const midInner = rr * 1.45;
-    const midHalfW = rr * 0.34;
-    for (let i = 0; i < rayCount; i++) {
-      const ang = baseRot + (i / rayCount) * Math.PI * 2 + Math.PI / rayCount;
-      rayTriangle(ang, midInner, midOuter, midHalfW, 0.08 + tw * 0.07, 0.18 + tw * 0.10);
-    }
-
-    // Cross flare (4 strong rays) for a nicer highlight
-    const crossOuter = rr * (30 + 12 * tw);
-    const crossInner = rr * 1.2;
-    const crossHalfW = rr * 0.30;
-    for (let k = 0; k < 4; k++) {
-      const ang = baseRot * 0.7 + k * (Math.PI / 2);
-      rayTriangle(ang, crossInner, crossOuter, crossHalfW, 0.07 + tw * 0.07, 0.16 + tw * 0.10);
-    }
-
-    ctx.restore();
-    ctx.filter = 'none';
-  }
-
   function drawLight(p, now) {
     const tw = 0.55 + 0.45 * Math.sin(now * 0.001 * p.twinkleSpeed + p.phase);
     const boost = boostFactor01(now) * (state.boost.strength || 0);
@@ -494,30 +466,6 @@
     const outerA = 0.12 + tw * 0.12;
 
     const rr = Math.max(0.6, p.radius) * glowMul;
-
-    if (p.kind === 'topper') {
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      drawTopperRays({ col, tw, rr, now, perf: Boolean(state.settings?.perf) });
-
-      // Core dot (single big bright point)
-      const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rr * 7.6);
-      grad.addColorStop(0, rgb(col, 0.75 + tw * 0.22));
-      grad.addColorStop(0.22, rgb(col, 0.22 + tw * 0.10));
-      grad.addColorStop(1, rgb(col, 0));
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(0, 0, rr * 4.2, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = rgb(col, 0.95);
-      ctx.beginPath();
-      ctx.arc(0, 0, Math.max(1.2, rr * 0.95), 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.restore();
-      return;
-    }
 
     const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rr * 5.2);
     grad.addColorStop(0, rgb(col, coreA));
@@ -890,7 +838,9 @@
       ctx.restore();
     }
 
-    requestAnimationFrame(tick);
+    if (state.loop.running) {
+      state.loop.rafId = requestAnimationFrame(tick);
+    }
   }
 
   function init() {
@@ -903,11 +853,34 @@
     window.addEventListener('pointermove', onPointerMove, { passive: true });
     window.addEventListener('touchmove', onTouchMove, { passive: true });
 
-    requestAnimationFrame(tick);
+    state.loop.running = true;
+    state.loop.rafId = requestAnimationFrame(tick);
+
+    // Pause rendering when the tab is hidden to save battery/CPU.
+    // Resume smoothly by resetting perf dt tracking.
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        if (document.hidden) {
+          state.loop.running = false;
+          if (state.loop.rafId) cancelAnimationFrame(state.loop.rafId);
+          state.loop.rafId = 0;
+          return;
+        }
+        state.perfStats.lastNow = 0;
+        state.loop.running = true;
+        if (!state.loop.rafId) state.loop.rafId = requestAnimationFrame(tick);
+      },
+      { passive: true }
+    );
   }
 
   function setSettings(partial, { rebuild } = { rebuild: false }) {
-    state.settings = { ...state.settings, ...(partial || {}) };
+    const next = { ...(partial || {}) };
+    // Topper was removed for performance; ignore legacy settings.
+    if (Object.prototype.hasOwnProperty.call(next, 'topper')) delete next.topper;
+    state.settings = { ...state.settings, ...next };
+    if (Object.prototype.hasOwnProperty.call(next, 'zoom')) applyZoomToFov();
     if (rebuild) buildScene();
   }
 

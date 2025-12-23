@@ -26,24 +26,25 @@
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --page-bg: radial-gradient(1200px 800px at 50% 35%, #f6f8ff 0%, #e9eef7 55%, #dfe6f2 100%);
-  --scene-bg-0: #f6f8ff;
-  --scene-bg-1: #e9eef7;
-  --scene-bg-2: #dfe6f2;
+  /* Daytime: brighter sky-like background, clearer surfaces */
+  --page-bg: radial-gradient(1200px 800px at 50% 30%, #fbfdff 0%, #eef6ff 52%, #e3edf9 100%);
+  --scene-bg-0: #fbfdff;
+  --scene-bg-1: #eef6ff;
+  --scene-bg-2: #e3edf9;
 
-  --ui-surface: rgba(255, 255, 255, 0.72);
-  --ui-border: rgba(0, 0, 0, 0.12);
-  --ui-text: rgba(0, 0, 0, 0.78);
-  --ui-text-strong: rgba(0, 0, 0, 0.88);
-  --ui-text-muted: rgba(0, 0, 0, 0.62);
-  --ui-text-subtle: rgba(0, 0, 0, 0.52);
+  --ui-surface: rgba(255, 255, 255, 0.86);
+  --ui-border: rgba(12, 28, 54, 0.14);
+  --ui-text: rgba(10, 16, 26, 0.82);
+  --ui-text-strong: rgba(10, 16, 26, 0.92);
+  --ui-text-muted: rgba(10, 16, 26, 0.66);
+  --ui-text-subtle: rgba(10, 16, 26, 0.56);
 
-  --ui-hover-bg: rgba(0, 0, 0, 0.06);
-  --ui-hover-border: rgba(0, 0, 0, 0.12);
-  --ui-active-border: rgba(0, 0, 0, 0.18);
+  --ui-hover-bg: rgba(12, 28, 54, 0.06);
+  --ui-hover-border: rgba(12, 28, 54, 0.14);
+  --ui-active-border: rgba(12, 28, 54, 0.2);
 
-  --ui-control-bg: rgba(0, 0, 0, 0.06);
-  --ui-control-border: rgba(0, 0, 0, 0.14);
+  --ui-control-bg: rgba(255, 255, 255, 0.8);
+  --ui-control-border: rgba(12, 28, 54, 0.18);
 }
 
 * {
