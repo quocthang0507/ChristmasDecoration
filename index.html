@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Christmas Lights Tree</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Christmas lights tree canvas"></canvas>
+
+    <div class="controls" aria-label="Tùy biến cây thông">
+      <div class="controls__header">
+        <div class="controls__title">Tùy biến</div>
+        <button id="ctl-panel-toggle" class="controls__toggle" type="button" aria-expanded="true">
+          Panel
+        </button>
+      </div>
+
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Nhạc</span>
+        <input id="ctl-music" type="checkbox" />
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Chọn nhạc</span>
+        <select id="ctl-track" class="controls__select" aria-label="Chọn nhạc"></select>
+        <span class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Âm lượng</span>
+        <input id="ctl-volume" type="range" min="0" max="1" step="0.01" />
+        <span id="ctl-volume-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Mật độ</span>
+        <input id="ctl-density" type="range" min="0.7" max="1.6" step="0.05" />
+        <span id="ctl-density-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Kích thước</span>
+        <input id="ctl-size" type="range" min="0.75" max="1.7" step="0.05" />
+        <span id="ctl-size-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Độ sáng đốm</span>
+        <input id="ctl-glow" type="range" min="0.6" max="1.9" step="0.05" />
+        <span id="ctl-glow-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">3D theo chuột</span>
+        <input id="ctl-mouse" type="range" min="0" max="1.8" step="0.05" />
+        <span id="ctl-mouse-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Bay tự do</span>
+        <input id="ctl-freefly" type="checkbox" />
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Tốc độ bay</span>
+        <input id="ctl-freeflyspeed" type="range" min="0.2" max="2.2" step="0.05" />
+        <span id="ctl-freeflyspeed-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Đổi màu</span>
+        <input id="ctl-color" type="range" min="0" max="1.6" step="0.05" />
+        <span id="ctl-color-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Gió</span>
+        <input id="ctl-wind" type="range" min="-1" max="1" step="0.05" />
+        <span id="ctl-wind-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Auto sway</span>
+        <input id="ctl-sway" type="range" min="0" max="1.6" step="0.05" />
+        <span id="ctl-sway-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Đốm sáng đỉnh</span>
+        <input id="ctl-top" type="checkbox" />
+      </label>
+
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Tuyết rơi</span>
+        <input id="ctl-snow" type="checkbox" />
+      </label>
+
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Dây đèn xoắn</span>
+        <input id="ctl-garland" type="checkbox" />
+      </label>
+
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Performance</span>
+        <input id="ctl-perf" type="checkbox" />
+      </label>
+
+      <button id="ctl-reset" class="controls__btn" type="button">Reset</button>
+    </div>
+
+    <div class="hud" aria-hidden="true">
+      <div class="hud__title">Merry Christmas</div>
+      <div class="hud__hint">Move your mouse / trackpad</div>
+    </div>
+
+    <audio id="bgm" preload="auto" playsinline></audio>
+
+    <script src="./main.js" defer></script>
+  </body>
+</html>
