@@ -24,6 +24,7 @@ Ngoài trang cây thông, dự án có thêm các trang mini (thiệp, countdown
 - Cây thông bằng canvas: glow + twinkle + đổi màu
 - 3D/parallax theo chuột hoặc Bay tự do
 - Tuyết rơi + gió
+- Tuỳ chỉnh lượng tuyết rơi
 - Dây đèn xoắn (garland)
 - Auto sway + Performance mode
 - Nhạc nền: bật/tắt, chọn bài, loop 1 bài, âm lượng
@@ -121,6 +122,8 @@ Reset nhanh:
 ## Tuỳ biến
 
 Panel “Tùy biến” cho phép chỉnh: mật độ/kích thước/độ sáng đốm, 3D/bay tự do, đổi màu, tuyết/gió, dây đèn xoắn, auto sway, performance, nhạc.
+
+Mới: có thêm slider “Lượng tuyết” để tăng/giảm mật độ tuyết.
 
 ## Performance tips
 

@@ -9,6 +9,7 @@
     color: 1.05,
     zoom: 1,
     snow: true,
+    snowAmount: 1,
     wind: 0.15,
     garland: true,
     perf: false,
@@ -21,6 +22,17 @@
   });
 
   const STORAGE_KEY = 'xmasTreeSettingsV2';
+
+  function toBool(v, fallback) {
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'number') return v !== 0;
+    if (typeof v === 'string') {
+      const s = v.trim().toLowerCase();
+      if (s === 'true' || s === '1' || s === 'yes' || s === 'on') return true;
+      if (s === 'false' || s === '0' || s === 'no' || s === 'off' || s === '') return false;
+    }
+    return fallback;
+  }
 
   function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
@@ -38,14 +50,15 @@
         mouse: clamp(Number(parsed.mouse ?? DEFAULT_SETTINGS.mouse), 0, 1.8),
         color: clamp(Number(parsed.color ?? DEFAULT_SETTINGS.color), 0, 1.6),
         zoom: clamp(Number(parsed.zoom ?? DEFAULT_SETTINGS.zoom), 0.7, 1.6),
-        snow: Boolean(parsed.snow ?? DEFAULT_SETTINGS.snow),
+        snow: toBool(parsed.snow, DEFAULT_SETTINGS.snow),
+        snowAmount: clamp(Number(parsed.snowAmount ?? DEFAULT_SETTINGS.snowAmount), 0.2, 2.2),
         wind: clamp(Number(parsed.wind ?? DEFAULT_SETTINGS.wind), -1, 1),
-        garland: Boolean(parsed.garland ?? DEFAULT_SETTINGS.garland),
-        perf: Boolean(parsed.perf ?? DEFAULT_SETTINGS.perf),
+        garland: toBool(parsed.garland, DEFAULT_SETTINGS.garland),
+        perf: toBool(parsed.perf, DEFAULT_SETTINGS.perf),
         sway: clamp(Number(parsed.sway ?? DEFAULT_SETTINGS.sway), 0, 1.6),
-        freefly: Boolean(parsed.freefly ?? DEFAULT_SETTINGS.freefly),
+        freefly: toBool(parsed.freefly, DEFAULT_SETTINGS.freefly),
         freeflySpeed: clamp(Number(parsed.freeflySpeed ?? DEFAULT_SETTINGS.freeflySpeed), 0.2, 2.2),
-        music: Boolean(parsed.music ?? DEFAULT_SETTINGS.music),
+        music: toBool(parsed.music, DEFAULT_SETTINGS.music),
         volume: clamp(Number(parsed.volume ?? DEFAULT_SETTINGS.volume), 0, 1),
         track: String(parsed.track ?? DEFAULT_SETTINGS.track),
       };
@@ -168,6 +181,29 @@
       defaultCollapsed: true,
     });
 
+    // Mobile hint: tell users how to open the panel (reduces confusion when auto-collapsed)
+    const elHudHint = document.querySelector('.hud__hint');
+    const elPanel = document.querySelector('.controls');
+    const elPanelToggle = document.getElementById('ctl-panel-toggle');
+    const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches;
+    const defaultHudHint = elHudHint?.textContent || '';
+
+    function syncHudHint() {
+      if (!elHudHint) return;
+      if (!isCoarse) {
+        elHudHint.textContent = defaultHudHint;
+        return;
+      }
+      const collapsed = Boolean(elPanel?.classList.contains('is-collapsed'));
+      elHudHint.textContent = collapsed ? 'Nhấn “Tùy biến” để mở bảng điều khiển' : 'Dùng các slider để tuỳ biến hiệu ứng';
+    }
+
+    syncHudHint();
+    elPanelToggle?.addEventListener('click', () => {
+      // Update after the UI script toggles classes.
+      setTimeout(syncHudHint, 0);
+    });
+
     const settings = loadSettings();
     saveSettings(settings);
 
@@ -185,6 +221,7 @@
     const elWind = document.getElementById('ctl-wind');
     const elSway = document.getElementById('ctl-sway');
     const elSnow = document.getElementById('ctl-snow');
+    const elSnowAmt = document.getElementById('ctl-snowamt');
     const elGarland = document.getElementById('ctl-garland');
     const elPerf = document.getElementById('ctl-perf');
     const elReset = document.getElementById('ctl-reset');
@@ -197,6 +234,7 @@
     const elColorVal = document.getElementById('ctl-color-val');
     const elWindVal = document.getElementById('ctl-wind-val');
     const elSwayVal = document.getElementById('ctl-sway-val');
+    const elSnowAmtVal = document.getElementById('ctl-snowamt-val');
 
     // Music
     const audio = /** @type {HTMLAudioElement|null} */ (document.getElementById('bgm'));
@@ -216,6 +254,7 @@
       if (elWind) elWind.value = String(settings.wind);
       if (elSway) elSway.value = String(settings.sway);
       if (elSnow) elSnow.checked = Boolean(settings.snow);
+      if (elSnowAmt) elSnowAmt.value = String(settings.snowAmount);
       if (elGarland) elGarland.checked = Boolean(settings.garland);
       if (elPerf) elPerf.checked = Boolean(settings.perf);
 
@@ -224,11 +263,19 @@
       if (elGlowVal) elGlowVal.textContent = `${settings.glow.toFixed(2)}×`;
       if (elMouseVal) elMouseVal.textContent = `${settings.mouse.toFixed(2)}×`;
       if (elColorVal) elColorVal.textContent = `${settings.color.toFixed(2)}×`;
-      if (elWindVal) elWindVal.textContent = `${settings.wind.toFixed(2)}`;
+      if (elWindVal) {
+        const v = Number(settings.wind || 0);
+        const a = Math.abs(v);
+        const dir = v < -0.01 ? '←' : v > 0.01 ? '→' : '•';
+        const strength = a < 0.2 ? 'Nhẹ' : a < 0.55 ? 'Vừa' : 'Mạnh';
+        elWindVal.textContent = a < 0.01 ? 'Tắt' : `${dir} ${strength}`;
+      }
       if (elSwayVal) elSwayVal.textContent = `${settings.sway.toFixed(2)}×`;
+      if (elSnowAmtVal) elSnowAmtVal.textContent = `${settings.snowAmount.toFixed(2)}×`;
       if (elFreeflySpeedVal) elFreeflySpeedVal.textContent = `${settings.freeflySpeed.toFixed(2)}×`;
 
       if (elMouse) elMouse.disabled = Boolean(settings.freefly);
+      if (elSnowAmt) elSnowAmt.disabled = !Boolean(settings.snow);
 
       if (elMusic) elMusic.checked = Boolean(settings.music);
       if (elVolume) elVolume.value = String(settings.volume);
@@ -245,6 +292,7 @@
           color: settings.color,
           zoom: settings.zoom,
           snow: settings.snow,
+          snowAmount: settings.snowAmount,
           wind: settings.wind,
           garland: settings.garland,
           perf: settings.perf,
@@ -310,6 +358,11 @@
 
     elSnow?.addEventListener('change', () => {
       settings.snow = Boolean(elSnow.checked);
+      onSettingsChange({ rebuild: true });
+    });
+
+    elSnowAmt?.addEventListener('input', () => {
+      settings.snowAmount = clamp(Number(elSnowAmt.value), 0.2, 2.2);
       onSettingsChange({ rebuild: true });
     });
 

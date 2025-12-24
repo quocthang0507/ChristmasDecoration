@@ -64,6 +64,16 @@ body {
     "Segoe UI Emoji";
 }
 
+/* Accessibility: visible keyboard focus (uses existing theme tokens) */
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ui-active-border);
+  outline-offset: 2px;
+}
+
+:where(a, button, input, select, textarea):focus {
+  outline: none;
+}
+
 #scene {
   display: block;
   width: 100vw;
@@ -87,6 +97,25 @@ body {
   backdrop-filter: blur(16px) saturate(1.15);
   -webkit-backdrop-filter: blur(16px) saturate(1.15);
   max-width: min(520px, calc(100vw - 36px));
+}
+
+@media (max-width: 600px) {
+  /* Reduce occlusion on small screens */
+  .nav {
+    left: 12px;
+    top: 12px;
+    padding: 6px;
+    gap: 6px;
+    max-width: calc(100vw - 24px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav__link {
+    padding: 6px 9px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
 }
 
 .nav__link {

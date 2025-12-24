@@ -57,6 +57,7 @@
       color: 1.05,
       zoom: 1,
       snow: true,
+      snowAmount: 1,
       wind: 0.15,
       garland: true,
       perf: false,
@@ -403,7 +404,13 @@
     }
 
     if (state.settings?.snow) {
-      const snowCount = clamp(Math.floor((w * h * 0.000035) / (perf ? 1.6 : 1)), perf ? 110 : 180, perf ? 420 : 720);
+      const amount = clamp(Number(state.settings?.snowAmount ?? 1) || 1, 0.2, 2.2);
+      const base = (w * h * 0.000035) / (perf ? 1.6 : 1);
+      const snowCount = clamp(
+        Math.floor(base * amount),
+        Math.floor((perf ? 110 : 180) * amount),
+        Math.floor((perf ? 420 : 720) * amount)
+      );
       const zDepth = maxR * 1.8;
       for (let i = 0; i < snowCount; i++) {
         snow.push(
@@ -426,7 +433,13 @@
     const h = state.h;
     const perf = Boolean(state.settings?.perf);
 
-    const base = clamp(Math.floor((w * h * 0.000035) / (perf ? 1.6 : 1)), perf ? 110 : 180, perf ? 420 : 720);
+    const amount = clamp(Number(state.settings?.snowAmount ?? 1) || 1, 0.2, 2.2);
+
+    const base = clamp(
+      Math.floor(((w * h * 0.000035) / (perf ? 1.6 : 1)) * amount),
+      Math.floor((perf ? 110 : 180) * amount),
+      Math.floor((perf ? 420 : 720) * amount)
+    );
     const b = boostFactor01(now) * (state.boost.strength || 0);
     // During boost, temporarily add more snow.
     const mul = 1 + b * 1.35;
@@ -705,10 +718,17 @@
     if (state.settings?.freefly) return;
     state.pointerPx = ev.clientX;
     state.pointerPy = ev.clientY;
-    const x = (ev.clientX / state.w) * 2 - 1;
-    const y = (ev.clientY / state.h) * 2 - 1;
+    const w = Math.max(1, state.w || 1);
+    const h = Math.max(1, state.h || 1);
+    const x = (ev.clientX / w) * 2 - 1;
+    const y = (ev.clientY / h) * 2 - 1;
     state.targetMouseX = x;
     state.targetMouseY = y;
+  }
+
+  function onMouseMove(ev) {
+    // Fallback for browsers/environments where PointerEvent isn't available.
+    onPointerMove(ev);
   }
 
   function onTouchMove(ev) {
@@ -1138,7 +1158,11 @@
     state.targetMouseY = 0;
 
     window.addEventListener('resize', resize, { passive: true });
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    if ('PointerEvent' in window) {
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+    } else {
+      window.addEventListener('mousemove', onMouseMove, { passive: true });
+    }
     window.addEventListener('touchmove', onTouchMove, { passive: true });
 
     state.loop.running = true;
