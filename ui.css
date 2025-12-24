@@ -82,9 +82,10 @@ body {
   padding: 8px;
   border-radius: 12px;
   background: var(--ui-surface);
+  background-color: var(--ui-surface);
   border: 1px solid var(--ui-border);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
   max-width: min(520px, calc(100vw - 36px));
 }
 
@@ -348,6 +349,11 @@ body {
 .ui__pre {
   white-space: pre-line;
   line-height: 1.35;
+}
+
+/* Countdown page */
+.page-countdown .cd-panel-time-row {
+  display: none;
 }
 
 .controls__select {

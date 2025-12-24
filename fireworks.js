@@ -2,7 +2,7 @@
   const elEnabled = document.getElementById('fw-enabled');
   const elPerf = document.getElementById('fw-perf');
 
-  const STORAGE_KEY = 'cd.fireworks.enabled.v1';
+  const STORAGE_KEY = 'cd.fireworks.enabled.v2';
   const PERF_KEY = 'cd.fireworks.perf.v1';
 
   function loadBool(key, fallback) {
@@ -51,7 +51,7 @@
       expandedLabel: 'Thu gọn',
     });
 
-    if (elEnabled) elEnabled.checked = loadBool(STORAGE_KEY, false);
+    if (elEnabled) elEnabled.checked = loadBool(STORAGE_KEY, true);
     if (elPerf) elPerf.checked = loadBool(PERF_KEY, false);
 
     elEnabled?.addEventListener('change', sync);

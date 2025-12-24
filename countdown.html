@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Đếm ngược đến 00:00</title>
     <link rel="stylesheet" href="./ui.css" />
+    <link rel="stylesheet" href="./style.css" />
   </head>
-  <body>
+  <body class="page-countdown">
     <canvas id="scene" aria-label="Christmas lights tree canvas"></canvas>
 
     <nav class="nav" aria-label="Điều hướng">
@@ -15,9 +16,29 @@
       <a class="nav__link nav__link--active" href="./countdown.html">Đếm ngược</a>
       <a class="nav__link" href="./fireworks.html">Pháo hoa</a>
       <a class="nav__link" href="./globe.html">Snow Globe</a>
+      <a class="nav__link" href="./immersive.html">3D nhập vai</a>
       <a class="nav__link" href="./benchmark.html">Benchmark</a>
-      <button id="theme-toggle" class="nav__link nav__btn" type="button" aria-label="Đổi giao diện"></button>
     </nav>
+
+    <div class="hud" aria-hidden="true">
+      <div class="cd-hud">
+        <div id="cd-hud-event" class="cd-hud__event">Đếm ngược</div>
+        <div class="cd-hud__grid" aria-label="Thời gian còn lại">
+          <div class="cd-hud__cell">
+            <div id="cd-hud-hours" class="cd-hud__value ui__mono-big">00</div>
+            <div class="cd-hud__label">Giờ</div>
+          </div>
+          <div class="cd-hud__cell">
+            <div id="cd-hud-minutes" class="cd-hud__value ui__mono-big">00</div>
+            <div class="cd-hud__label">Phút</div>
+          </div>
+          <div class="cd-hud__cell">
+            <div id="cd-hud-seconds" class="cd-hud__value ui__mono-big">00</div>
+            <div class="cd-hud__label">Giây</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <section class="card-ui__panel" aria-label="Đếm ngược">
       <div class="card-ui__header">
@@ -33,7 +54,7 @@
         </select>
       </label>
 
-      <div class="card-ui__row">
+      <div class="card-ui__row cd-panel-time-row">
         <span class="card-ui__label">Còn lại</span>
         <div id="cd-time" class="card-ui__val ui__mono-big"></div>
       </div>

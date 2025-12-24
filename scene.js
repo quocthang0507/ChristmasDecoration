@@ -103,6 +103,9 @@
   /** @type {Light[]} */
   const lights = [];
 
+  /** @type {Array<Array<{x:number,y:number,z:number}>>} */
+  const garlandWires = [];
+
   class Snow {
     constructor({ x, y, z, size, vy, phase }) {
       this.x = x;
@@ -122,14 +125,18 @@
       this.x = x;
       this.y = y;
       this.z = z;
+      this.px = x;
+      this.py = y;
+      this.pz = z;
       this.vx = vx;
       this.vy = vy;
       this.vz = vz;
       this.radius = radius;
       this.color = color;
       this.life = life;
+      this.life0 = life;
       this.drag = drag;
-      this.kind = kind; // 'rocket' | 'spark'
+      this.kind = kind; // 'rocket' | 'spark' | 'trail' | 'flash'
       this.phase = Math.random() * Math.PI * 2;
     }
   }
@@ -239,6 +246,7 @@
     lights.length = 0;
     snow.length = 0;
     fireworks.length = 0;
+    garlandWires.length = 0;
 
     const w = state.w;
     const h = state.h;
@@ -326,6 +334,7 @@
 
       for (let s = 0; s < strands; s++) {
         const strandPhase = (s / Math.max(1, strands)) * Math.PI;
+        const wire = [];
         for (let i = 0; i < garlandCount; i++) {
           const t = i / Math.max(1, garlandCount - 1);
           const y = topY + t * treeHeight;
@@ -335,6 +344,10 @@
           const j = (1 - t) * 0.6;
           const x = Math.cos(theta) * r + randBetween(-1.2, 1.2) * j;
           const z = Math.sin(theta) * r + randBetween(-1.2, 1.2) * j;
+
+          // Keep a simple polyline for the garland wire so it is visible
+          // between bulbs (especially on mobile where bulbs can dominate).
+          wire.push({ x, y, z });
 
           const colorIndex = garlandColors[Math.floor(Math.random() * garlandColors.length)];
           lights.push(
@@ -352,6 +365,8 @@
             })
           );
         }
+
+        if (wire.length > 1) garlandWires.push(wire);
       }
     }
 
@@ -471,11 +486,29 @@
     return `rgba(${r},${g},${b},${a})`;
   }
 
+  function resolveFireworkColor(color) {
+    if (Array.isArray(color) && color.length === 3) return color;
+    return palette[color] || palette[0];
+  }
+
+  function randUnitDir3() {
+    // Uniform distribution on a sphere.
+    const u = Math.random() * 2 - 1; // cos(theta)
+    const a = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(Math.max(0, 1 - u * u));
+    return { x: r * Math.cos(a), y: u, z: r * Math.sin(a) };
+  }
+
   function drawLight(p, now) {
     const tw = 0.55 + 0.45 * Math.sin(now * 0.001 * p.twinkleSpeed + p.phase);
     const boost = boostFactor01(now) * (state.boost.strength || 0);
     const glowMul =
       (state.settings?.glow ?? 1) * (state.settings?.perf ? 0.8 : 1) * (1 + boost * (state.settings?.perf ? 0.45 : 0.65));
+
+    // Mobile: bulbs can look oversized because the tree occupies more of the screen.
+    // Scale bulbs down a bit on small viewports so the string/wire stays readable.
+    const minSide = Math.min(state.w, state.h);
+    const screenMul = clamp(minSide / 760, 0.68, 1);
 
     let col = palette[p.colorIndex];
     if (p.kind === 'tree') {
@@ -492,22 +525,76 @@
     const coreA = 0.55 + tw * 0.35;
     const outerA = 0.12 + tw * 0.12;
 
-    const rr = Math.max(0.6, p.radius) * glowMul;
+    const rr = Math.max(0.6, p.radius) * glowMul * screenMul;
 
-    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rr * 5.2);
+    const spreadMul = screenMul < 0.9 ? 0.86 : 1;
+
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rr * 5.2 * spreadMul);
     grad.addColorStop(0, rgb(col, coreA));
     grad.addColorStop(0.35, rgb(col, 0.22 + tw * 0.12));
     grad.addColorStop(1, rgb(col, outerA));
 
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(0, 0, rr * 2.1, 0, Math.PI * 2);
+    ctx.arc(0, 0, rr * 2.1 * spreadMul, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = rgb(col, 0.9);
     ctx.beginPath();
-    ctx.arc(0, 0, Math.max(0.7, rr * 0.75), 0, Math.PI * 2);
+    ctx.arc(0, 0, Math.max(0.65, rr * 0.72), 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  function drawGarlandWires(now) {
+    if (!state.settings?.garland) return;
+    if (!garlandWires.length) return;
+
+    const minSide = Math.min(state.w, state.h);
+    const isMobile = minSide < 520;
+
+    // Use UI border color for a subtle, theme-consistent wire.
+    const baseStroke = getCssVar('--ui-border', 'rgba(255,255,255,0.12)');
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = baseStroke;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalAlpha = isMobile ? 0.9 : 0.65;
+
+    for (const wire of garlandWires) {
+      for (let i = 1; i < wire.length; i++) {
+        const a = wire[i - 1];
+        const b = wire[i];
+
+        const ary = rotateY(a.x, a.z, state.yaw);
+        const arx = rotateX(a.y - state.h * 0.15, ary.z, state.pitch);
+        const aproj = projectPoint(ary.x, arx.y + state.h * 0.15, arx.z);
+
+        const bry = rotateY(b.x, b.z, state.yaw);
+        const brx = rotateX(b.y - state.h * 0.15, bry.z, state.pitch);
+        const bproj = projectPoint(bry.x, brx.y + state.h * 0.15, brx.z);
+
+        if (
+          (aproj.x < -60 && bproj.x < -60) ||
+          (aproj.x > state.w + 60 && bproj.x > state.w + 60) ||
+          (aproj.y < -90 && bproj.y < -90) ||
+          (aproj.y > state.h + 90 && bproj.y > state.h + 90)
+        ) {
+          continue;
+        }
+
+        const s = clamp(Math.min(aproj.s, bproj.s), 0.35, 1.25);
+        ctx.lineWidth = (isMobile ? 1.35 : 1.05) * s;
+        ctx.beginPath();
+        ctx.moveTo(aproj.x, aproj.y);
+        ctx.lineTo(bproj.x, bproj.y);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+    void now;
   }
 
   function drawSnow(s, now) {
@@ -653,6 +740,36 @@
     ctx.fill();
   }
 
+  function drawFireworkStreak({ col, x0, y0, x1, y1, rr, a }) {
+    // A thin additive streak between previous and current position.
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len = Math.hypot(dx, dy);
+    if (!(len > 1)) return;
+
+    const nx = dx / len;
+    const ny = dy / len;
+
+    const w = Math.max(0.8, rr * 0.55);
+    const ox = -ny * w;
+    const oy = nx * w;
+
+    // Simple quad with a gradient along the streak.
+    const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+    grad.addColorStop(0, rgb(col, 0));
+    grad.addColorStop(0.22, rgb(col, a * 0.55));
+    grad.addColorStop(1, rgb(col, a));
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(x0 + ox, y0 + oy);
+    ctx.lineTo(x0 - ox, y0 - oy);
+    ctx.lineTo(x1 - ox, y1 - oy);
+    ctx.lineTo(x1 + ox, y1 + oy);
+    ctx.closePath();
+    ctx.fill();
+  }
+
   function maybeSpawnFirework(now) {
     const enabled = Boolean(state.settings?.fireworks);
     if (!enabled) return;
@@ -706,24 +823,80 @@
     const perf = Boolean(state.settings?.perf);
     const fps = state.perfStats.fps || 60;
     const fpsFactor = clamp(fps / 60, 0.5, 1.05);
-    const count = Math.floor((perf ? 14 : 22) * fpsFactor);
-    const baseSpd = perf ? 1.45 : 1.7;
+    const count = Math.floor((perf ? 28 : 56) * fpsFactor);
+    const baseSpd = perf ? 1.05 : 1.25;
+
+    // Slightly vary color per burst for a more natural palette.
+    const baseCol = resolveFireworkColor(fw.color);
+    const burstCol = [
+      clamp(Math.round(baseCol[0] + randBetween(-18, 18)), 0, 255),
+      clamp(Math.round(baseCol[1] + randBetween(-18, 18)), 0, 255),
+      clamp(Math.round(baseCol[2] + randBetween(-18, 18)), 0, 255),
+    ];
+
+    // Flash core
+    fireworks.push(
+      new Firework({
+        x: fw.x,
+        y: fw.y,
+        z: fw.z,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        radius: randBetween(3.6, 5.6) * (state.settings?.size ?? 1),
+        color: burstCol,
+        life: randBetween(160, 240),
+        drag: 0.92,
+        kind: 'flash',
+      })
+    );
+
     for (let i = 0; i < count; i++) {
-      const a = (i / count) * Math.PI * 2 + randBetween(-0.12, 0.12);
-      const sp = baseSpd * randBetween(0.7, 1.35);
+      const dir = randUnitDir3();
+      // Slightly bias upward at the moment of burst (real fireworks expand then gravity takes over).
+      const upBias = perf ? 0.12 : 0.16;
+      dir.y = clamp(dir.y - upBias, -1, 1);
+      const sp = baseSpd * randBetween(0.65, 1.55);
+
+      // Two speed bands (core + outer ring) for a fuller burst.
+      const band = Math.random() < 0.25 ? 0.55 : 1;
+      const sp3 = sp * band;
+
       fireworks.push(
         new Firework({
           x: fw.x,
           y: fw.y,
           z: fw.z,
-          vx: Math.cos(a) * sp * randBetween(0.75, 1.1),
-          vy: Math.sin(a) * sp * randBetween(0.75, 1.1),
-          vz: randBetween(-0.45, 0.45) * sp,
-          radius: randBetween(1.1, 2.3) * (state.settings?.size ?? 1),
-          color: fw.color,
-          life: randBetween(820, 1280),
-          drag: 0.985,
+          vx: dir.x * sp3,
+          vy: dir.y * sp3,
+          vz: dir.z * sp3,
+          radius: randBetween(1.0, 2.2) * (state.settings?.size ?? 1),
+          color: burstCol,
+          life: randBetween(980, 1680),
+          drag: 0.986,
           kind: 'spark',
+        })
+      );
+    }
+
+    // A few trailing embers
+    const embers = Math.floor((perf ? 6 : 10) * fpsFactor);
+    for (let i = 0; i < embers; i++) {
+      const dir = randUnitDir3();
+      const sp = (perf ? 0.55 : 0.7) * randBetween(0.35, 1);
+      fireworks.push(
+        new Firework({
+          x: fw.x,
+          y: fw.y,
+          z: fw.z,
+          vx: dir.x * sp,
+          vy: dir.y * sp,
+          vz: dir.z * sp,
+          radius: randBetween(0.8, 1.4) * (state.settings?.size ?? 1),
+          color: [255, 220, 160],
+          life: randBetween(1200, 2000),
+          drag: 0.992,
+          kind: 'trail',
         })
       );
     }
@@ -738,9 +911,19 @@
 
     maybeSpawnFirework(now);
 
-    const dt = 16;
-    const g = 0.0105;
+    // Use real delta time for more natural motion across devices.
+    const last = updateAndDrawFireworks._lastNow || now;
+    updateAndDrawFireworks._lastNow = now;
+    const dt = clamp(now - last, 8, 34);
+
+    const perf = Boolean(state.settings?.perf);
+    const g = perf ? 0.0115 : 0.0125;
     const burstY = maybeSpawnFirework._burstY ?? state.h * 0.28;
+
+    // Rocket trail: small glowing particles behind the rocket.
+    // Limit per frame in perf mode.
+    const maxTrailAdds = perf ? 2 : 4;
+    let trailAdds = 0;
 
     for (let i = fireworks.length - 1; i >= 0; i--) {
       const fw = fireworks[i];
@@ -750,15 +933,52 @@
         continue;
       }
 
+      // Store previous position for streak rendering.
+      fw.px = fw.x;
+      fw.py = fw.y;
+      fw.pz = fw.z;
+
       fw.vx *= fw.drag;
       fw.vy *= fw.drag;
       fw.vz *= fw.drag;
 
-      if (fw.kind === 'spark') fw.vy += g * dt;
+      if (fw.kind !== 'rocket') fw.vy += g * dt;
+
+      // Slight air flutter for sparks (subtle, makes it feel less uniform).
+      if (fw.kind === 'spark') {
+        const jitter = (perf ? 0.00065 : 0.0009) * dt;
+        fw.vx += Math.sin(now * 0.006 + fw.phase) * jitter;
+        fw.vz += Math.cos(now * 0.006 + fw.phase) * jitter;
+      }
 
       fw.x += fw.vx * dt;
       fw.y += fw.vy * dt;
       fw.z += fw.vz * dt;
+
+      if (fw.kind === 'rocket' && trailAdds < maxTrailAdds) {
+        // Emit a couple of short-lived trail sparks.
+        const sizeMul = state.settings?.size ?? 1;
+        const n = perf ? 1 : 2;
+        for (let k = 0; k < n; k++) {
+          if (trailAdds >= maxTrailAdds) break;
+          trailAdds++;
+          fireworks.push(
+            new Firework({
+              x: fw.x + randBetween(-1.2, 1.2),
+              y: fw.y + randBetween(4, 10),
+              z: fw.z + randBetween(-1.2, 1.2),
+              vx: fw.vx * 0.05 + randBetween(-0.05, 0.05),
+              vy: randBetween(0.08, 0.22),
+              vz: fw.vz * 0.05 + randBetween(-0.05, 0.05),
+              radius: randBetween(0.75, 1.35) * sizeMul,
+              color: [255, 220, 160],
+              life: randBetween(220, 360),
+              drag: 0.94,
+              kind: 'trail',
+            })
+          );
+        }
+      }
 
       if (fw.kind === 'rocket' && fw.y <= burstY) {
         // Burst and remove rocket
@@ -772,18 +992,36 @@
       const rx = rotateX(fw.y - state.h * 0.15, ry.z, state.pitch);
       const proj = projectPoint(ry.x, rx.y + state.h * 0.15, rx.z);
 
+      const pry = rotateY(fw.px, fw.pz, state.yaw);
+      const prx = rotateX(fw.py - state.h * 0.15, pry.z, state.pitch);
+      const pproj = projectPoint(pry.x, prx.y + state.h * 0.15, prx.z);
+
       // Skip if far outside viewport.
       if (proj.x < -80 || proj.x > state.w + 80 || proj.y < -120 || proj.y > state.h + 120) continue;
 
+      const life01 = clamp(fw.life / Math.max(1, fw.life0), 0, 1);
       const tw = 0.6 + 0.4 * Math.sin(now * 0.004 + fw.phase);
-      const rr = fw.radius * (0.85 + proj.s * 0.55);
-      const col = palette[fw.color] || palette[0];
+      const rr = fw.radius * (0.85 + proj.s * 0.55) * (fw.kind === 'spark' ? (0.65 + life01 * 0.55) : 1);
+      const col = resolveFireworkColor(fw.color);
+
+      // Fade out over life; rockets stay stronger.
+      let a = fw.kind === 'rocket' ? 0.82 : 0.72;
+      if (fw.kind === 'flash') a = 0.95;
+      a *= Math.pow(life01, fw.kind === 'trail' ? 1.6 : 1.25);
+      a *= 0.75 + tw * 0.25;
 
       ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+
+      // Streak in screen-space first (no proj scaling).
+      if (fw.kind !== 'flash') {
+        drawFireworkStreak({ col, x0: pproj.x, y0: pproj.y, x1: proj.x, y1: proj.y, rr: rr * 0.9, a: a * 0.85 });
+      }
+
+      // Dot in projected space.
       ctx.translate(proj.x, proj.y);
       ctx.scale(proj.s, proj.s);
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = fw.kind === 'rocket' ? 0.75 : 0.68;
+      ctx.globalAlpha = a;
       drawFireworkDot({ col, rr, tw });
       ctx.restore();
     }
@@ -833,6 +1071,9 @@
       ctx.arc(globeCx, globeCy, globeR, 0, Math.PI * 2);
       ctx.clip();
     }
+
+    // Draw garland wire strands before bulbs.
+    drawGarlandWires(now);
 
     const ordered = lights
       .map((p) => {
@@ -1028,14 +1269,7 @@
     }
   }
 
-  // Rebuild background if theme changes.
-  window.addEventListener(
-    'cdthemechange',
-    () => {
-      rebuildBackgroundGradient();
-    },
-    { passive: true }
-  );
+  // Theme switching removed; background gradient is rebuilt on resize.
 
   window.CD_Scene = Object.freeze({ setSettings, getSettings, rebuild, triggerBoost });
 

@@ -48,3 +48,59 @@
     bottom: 16px;
   }
 }
+
+.cd-hud {
+  display: grid;
+  gap: 12px;
+  place-items: center;
+  text-align: center;
+
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--ui-border);
+  background: color-mix(in srgb, var(--scene-bg-0) 55%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.cd-hud__event {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 650;
+  font-size: 12px;
+  color: var(--ui-text-strong);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
+}
+
+.cd-hud__grid {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 18px;
+  align-items: end;
+}
+
+.cd-hud__cell {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  min-width: 72px;
+}
+
+.cd-hud__value {
+  font-size: clamp(28px, 7vw, 76px);
+  font-weight: 650;
+  color: var(--ui-text-strong);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
+}
+
+.cd-hud__label {
+  font-size: 12px;
+  color: var(--ui-text-muted);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
+}
+
+:root[data-theme='light'] .cd-hud__event,
+:root[data-theme='light'] .cd-hud__value,
+:root[data-theme='light'] .cd-hud__label {
+  text-shadow: none;
+}

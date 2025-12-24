@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>3D nhập vai — Cây thông & Tinh vân</title>
+    <link rel="stylesheet" href="./ui.css" />
+    <link rel="stylesheet" href="./immersive.css" />
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body class="page-immersive">
+    <canvas id="immersive" aria-label="Immersive 3D canvas"></canvas>
+
+    <nav class="nav" aria-label="Điều hướng">
+      <a class="nav__link" href="./index.html">Cây thông</a>
+      <a class="nav__link" href="./card.html">Thiệp chúc mừng</a>
+      <a class="nav__link" href="./countdown.html">Đếm ngược</a>
+      <a class="nav__link" href="./fireworks.html">Pháo hoa</a>
+      <a class="nav__link" href="./globe.html">Snow Globe</a>
+      <a class="nav__link nav__link--active" href="./immersive.html">3D nhập vai</a>
+      <a class="nav__link" href="./benchmark.html">Benchmark</a>
+    </nav>
+
+    <section class="card-ui__panel" aria-label="3D nhập vai">
+      <div class="card-ui__header">
+        <div class="card-ui__title">3D nhập vai</div>
+        <button id="im-panel-toggle" class="card-ui__toggle" type="button" aria-expanded="true">Panel</button>
+      </div>
+
+      <div class="card-ui__row">
+        <span class="card-ui__label">Camera AI</span>
+        <button id="im-camera" class="card-ui__btn" type="button">Bật camera</button>
+      </div>
+
+      <div class="card-ui__row">
+        <span class="card-ui__label">Thư viện bộ nhớ</span>
+        <input id="im-upload" class="card-ui__input" type="file" accept="image/*" multiple />
+      </div>
+
+      <div class="card-ui__row">
+        <span class="card-ui__label">Cử chỉ</span>
+        <div id="im-gesture" class="card-ui__val">—</div>
+      </div>
+
+      <div class="card-ui__row">
+        <span class="card-ui__label">Trạng thái</span>
+        <div id="im-status" class="card-ui__val">Sẵn sàng</div>
+      </div>
+
+      <div class="card-ui__status">
+        ✊ Nắm đấm: gom hạt → cây thông<br />
+        🖐 Mở tay: nổ → tinh vân<br />
+        👋 Vẫy: xoay phối cảnh (có quán tính)<br />
+        🤏 Chụm: zoom ảnh vừa tải lên
+      </div>
+    </section>
+
+    <!-- Camera preview (video + skeleton overlay) -->
+    <div id="im-video-wrap" class="im-video-wrap" aria-hidden="true">
+      <video id="im-video" playsinline muted autoplay></video>
+      <canvas id="im-skeleton" aria-hidden="true"></canvas>
+    </div>
+
+    <!-- UI helpers (theme toggle, nav active, panel collapse) -->
+    <script src="./ui.js" defer></script>
+
+    <!-- MediaPipe (global) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.min.js" crossorigin="anonymous"></script>
+
+    <!-- App -->
+    <script type="module" src="./immersive.js"></script>
+  </body>
+</html>

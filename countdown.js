@@ -1,6 +1,10 @@
 (() => {
   const elTarget = document.getElementById('cd-target');
   const elTime = document.getElementById('cd-time');
+  const elHudEvent = document.getElementById('cd-hud-event');
+  const elHudHours = document.getElementById('cd-hud-hours');
+  const elHudMinutes = document.getElementById('cd-hud-minutes');
+  const elHudSeconds = document.getElementById('cd-hud-seconds');
   const elWhen = document.getElementById('cd-when');
   const elStatus = document.getElementById('cd-status');
 
@@ -63,6 +67,10 @@
     const kind = String(elTarget?.value || 'christmas');
     const target = getTargetDate(kind);
 
+    if (elHudEvent) {
+      elHudEvent.textContent = kind === 'newyear' ? 'Đếm ngược đến Năm Mới' : 'Đếm ngược đến Giáng Sinh';
+    }
+
     const now = Date.now();
     const diff = target.getTime() - now;
 
@@ -76,6 +84,11 @@
         window.CD_Scene?.triggerBoost({ durationMs: 4800, strength: 1 });
       }
       if (elTime) elTime.textContent = '00:00:00';
+
+      if (elHudHours) elHudHours.textContent = '00';
+      if (elHudMinutes) elHudMinutes.textContent = '00';
+      if (elHudSeconds) elHudSeconds.textContent = '00';
+
       requestAnimationFrame(tick);
       return;
     }
@@ -88,7 +101,15 @@
     const m = Math.floor((total % 3600) / 60);
     const s = total % 60;
 
-    if (elTime) elTime.textContent = `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+    const hh = pad2(h);
+    const mm = pad2(m);
+    const ss = pad2(s);
+
+    if (elTime) elTime.textContent = `${hh}:${mm}:${ss}`;
+
+    if (elHudHours) elHudHours.textContent = hh;
+    if (elHudMinutes) elHudMinutes.textContent = mm;
+    if (elHudSeconds) elHudSeconds.textContent = ss;
 
     requestAnimationFrame(tick);
   }
@@ -98,7 +119,7 @@
     window.CD_UI?.initCornerPanel({
       panelSelector: '.card-ui__panel',
       toggleSelector: '#countdown-panel-toggle',
-      storageKey: 'cd.countdown.panelCollapsed.v1',
+      storageKey: 'cd.countdown.panelCollapsed.v2',
       defaultCollapsed: true,
     });
 
