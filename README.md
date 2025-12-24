@@ -25,6 +25,13 @@ Ngoài trang cây thông, dự án có thêm các trang mini (thiệp, countdown
 - 3D/parallax theo chuột hoặc Bay tự do
 - Tuyết rơi + gió
 - Tuỳ chỉnh lượng tuyết rơi
+- Zoom bằng cuộn chuột (và slider Zoom)
+- Preset nhanh (Êm dịu / Rực rỡ / Nhẹ máy)
+- Phím tắt: `P` (panel), `R` (reset), `M` (nhạc), `F` (bay tự do), `N` (next track)
+- Chia sẻ cấu hình: Copy/Paste JSON settings
+- Nhạc: Shuffle + Next
+- Tuỳ chỉnh tuyết nâng cao: tốc độ + kích thước + Adaptive tuyết (giảm tuyết khi FPS thấp)
+- Mobile: tuỳ chọn “Nghiêng để xoay” (gyro look)
 - Dây đèn xoắn (garland)
 - Auto sway + Performance mode
 - Nhạc nền: bật/tắt, chọn bài, loop 1 bài, âm lượng
@@ -47,7 +54,8 @@ Ngoài trang cây thông, dự án có thêm các trang mini (thiệp, countdown
 ## Hướng dẫn nhanh (cách dùng)
 
 - Mở trang bất kỳ, dùng panel góc phải để chỉnh hiệu ứng.
-- Trên desktop: di chuột để thấy parallax/3D; trên mobile: dùng các toggle/slider trong panel.
+- Trên desktop: di chuột để thấy parallax/3D; cuộn để zoom.
+- Trên mobile: dùng các toggle/slider trong panel (có thể bật “Nghiêng để xoay”).
 - Nút Light/Dark nằm trên thanh điều hướng.
 
 ### Countdown
@@ -124,6 +132,14 @@ Reset nhanh:
 Panel “Tùy biến” cho phép chỉnh: mật độ/kích thước/độ sáng đốm, 3D/bay tự do, đổi màu, tuyết/gió, dây đèn xoắn, auto sway, performance, nhạc.
 
 Mới: có thêm slider “Lượng tuyết” để tăng/giảm mật độ tuyết.
+
+Mới (index):
+
+- Preset nhanh giúp chọn cấu hình đẹp/nhẹ máy.
+- Zoom: dùng cuộn chuột hoặc slider Zoom.
+- Tuyết nâng cao: “Tốc độ tuyết”, “Kích thước tuyết”, và “Adaptive tuyết”.
+- Chia sẻ cấu hình: Copy/Paste để chia sẻ JSON settings.
+- Nhạc: Shuffle + Next.
 
 ## Performance tips
 

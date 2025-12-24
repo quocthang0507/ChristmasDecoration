@@ -49,6 +49,9 @@
       gamma: 0, // left-to-right tilt (-90 to 90)
       alpha: 0, // compass direction (0 to 360)
     },
+    a11y: {
+      reduceMotion: false,
+    },
     settings: {
       density: 1.15,
       size: 1.1,
@@ -58,6 +61,10 @@
       zoom: 1,
       snow: true,
       snowAmount: 1,
+      snowSpeed: 1,
+      snowSize: 1,
+      adaptiveSnow: true,
+      gyroLook: false,
       wind: 0.15,
       garland: true,
       perf: false,
@@ -435,10 +442,19 @@
 
     const amount = clamp(Number(state.settings?.snowAmount ?? 1) || 1, 0.2, 2.2);
 
+    // Adaptive snow density: reduce count when FPS dips.
+    let adaptiveMul = 1;
+    if (state.settings?.adaptiveSnow) {
+      const fps = Number(state.perfStats.fps || 60);
+      if (fps < 30) adaptiveMul = 0.45;
+      else if (fps < 40) adaptiveMul = 0.62;
+      else if (fps < 50) adaptiveMul = 0.82;
+    }
+
     const base = clamp(
-      Math.floor(((w * h * 0.000035) / (perf ? 1.6 : 1)) * amount),
-      Math.floor((perf ? 110 : 180) * amount),
-      Math.floor((perf ? 420 : 720) * amount)
+      Math.floor(((w * h * 0.000035) / (perf ? 1.6 : 1)) * amount * adaptiveMul),
+      Math.floor((perf ? 110 : 180) * amount * adaptiveMul),
+      Math.floor((perf ? 420 : 720) * amount * adaptiveMul)
     );
     const b = boostFactor01(now) * (state.boost.strength || 0);
     // During boost, temporarily add more snow.
@@ -637,13 +653,16 @@
     const boost = boostFactor01(now) * (state.boost.strength || 0);
     const boostVy = 1 + boost * 0.65;
 
+    const snowSpeed = clamp(Number(state.settings?.snowSpeed ?? 1) || 1, 0.5, 2);
+    const snowSize = clamp(Number(state.settings?.snowSize ?? 1) || 1, 0.5, 2);
+
     const mode = String(state.settings?.mode || 'default');
     const isGlobe = mode === 'globe';
 
     const vx = Number(s.vx || 0);
     const swirl = isGlobe ? 1 : 0;
 
-    s.y += s.vy * boostVy;
+    s.y += s.vy * boostVy * snowSpeed;
     s.x += vx + wind * (0.8 + 0.35 * Math.sin(now * 0.001 + s.phase));
 
     if (isGlobe) {
@@ -706,7 +725,7 @@
     const proj = projectPoint(ry.x, rx.y + h * 0.15, rx.z);
 
     const a = 0.12 + 0.18 * Math.sin(now * 0.0014 + s.phase) + boost * 0.10;
-    const r = s.size * (0.75 + proj.s * 0.55);
+    const r = s.size * (0.75 + proj.s * 0.55) * snowSize;
 
     ctx.fillStyle = `rgba(255,255,255,${Math.max(0, a)})`;
     ctx.beginPath();
@@ -1056,7 +1075,9 @@
     state.mouseX = lerp(state.mouseX, state.targetMouseX, 0.08);
     state.mouseY = lerp(state.mouseY, state.targetMouseY, 0.08);
 
-    const mouseStrength = state.settings?.mouse ?? 1;
+    let mouseStrength = state.settings?.mouse ?? 1;
+    const reduceMotion = Boolean(state.a11y.reduceMotion);
+    if (reduceMotion) mouseStrength *= 0.35;
 
     if (state.settings?.freefly) {
       const spd = state.settings?.freeflySpeed ?? 1;
@@ -1065,9 +1086,18 @@
     } else {
       state.yaw = state.mouseX * 0.9 * mouseStrength;
       state.pitch = -state.mouseY * 0.45 * mouseStrength;
+
+      // Optional gyro-based look (useful on mobile).
+      if (state.settings?.gyroLook && state.gyro.enabled) {
+        const g = clamp((state.gyro.gamma || 0) / 35, -1, 1);
+        const b = clamp((state.gyro.beta || 0) / 55, -1, 1);
+        const mul = reduceMotion ? 0.35 : 1;
+        state.yaw += g * 0.35 * mul;
+        state.pitch += b * 0.14 * mul;
+      }
     }
 
-    const sway = state.settings?.sway ?? 0;
+    const sway = (state.settings?.sway ?? 0) * (reduceMotion ? 0.35 : 1);
     const swayA = Math.sin(now * 0.00055) * sway * 0.18;
 
     // background (theme-aware)
@@ -1156,6 +1186,17 @@
     // start centered
     state.targetMouseX = 0;
     state.targetMouseY = 0;
+
+    // Accessibility: respect reduced motion preference
+    try {
+      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      state.a11y.reduceMotion = Boolean(mq.matches);
+      mq.addEventListener?.('change', (e) => {
+        state.a11y.reduceMotion = Boolean(e.matches);
+      });
+    } catch {
+      state.a11y.reduceMotion = false;
+    }
 
     window.addEventListener('resize', resize, { passive: true });
     if ('PointerEvent' in window) {

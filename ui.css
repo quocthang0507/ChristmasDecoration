@@ -252,6 +252,20 @@ body {
   font-size: 12px;
 }
 
+.controls__btn--mini {
+  margin-top: 0;
+  width: auto;
+  padding: 6px 10px;
+}
+
+.controls__btnpair {
+  display: inline-flex;
+  gap: 8px;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .controls__btn:active {
   transform: translateY(1px);
 }

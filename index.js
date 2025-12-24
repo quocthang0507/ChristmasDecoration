@@ -10,6 +10,10 @@
     zoom: 1,
     snow: true,
     snowAmount: 1,
+    snowSpeed: 1,
+    snowSize: 1,
+    adaptiveSnow: true,
+    gyroLook: false,
     wind: 0.15,
     garland: true,
     perf: false,
@@ -19,6 +23,7 @@
     music: true,
     volume: 0.45,
     track: '',
+    shuffle: false,
   });
 
   const STORAGE_KEY = 'xmasTreeSettingsV2';
@@ -52,6 +57,10 @@
         zoom: clamp(Number(parsed.zoom ?? DEFAULT_SETTINGS.zoom), 0.7, 1.6),
         snow: toBool(parsed.snow, DEFAULT_SETTINGS.snow),
         snowAmount: clamp(Number(parsed.snowAmount ?? DEFAULT_SETTINGS.snowAmount), 0.2, 2.2),
+        snowSpeed: clamp(Number(parsed.snowSpeed ?? DEFAULT_SETTINGS.snowSpeed), 0.5, 2),
+        snowSize: clamp(Number(parsed.snowSize ?? DEFAULT_SETTINGS.snowSize), 0.5, 2),
+        adaptiveSnow: toBool(parsed.adaptiveSnow, DEFAULT_SETTINGS.adaptiveSnow),
+        gyroLook: toBool(parsed.gyroLook, DEFAULT_SETTINGS.gyroLook),
         wind: clamp(Number(parsed.wind ?? DEFAULT_SETTINGS.wind), -1, 1),
         garland: toBool(parsed.garland, DEFAULT_SETTINGS.garland),
         perf: toBool(parsed.perf, DEFAULT_SETTINGS.perf),
@@ -61,10 +70,18 @@
         music: toBool(parsed.music, DEFAULT_SETTINGS.music),
         volume: clamp(Number(parsed.volume ?? DEFAULT_SETTINGS.volume), 0, 1),
         track: String(parsed.track ?? DEFAULT_SETTINGS.track),
+        shuffle: toBool(parsed.shuffle, DEFAULT_SETTINGS.shuffle),
       };
     } catch {
       return { ...DEFAULT_SETTINGS };
     }
+  }
+
+  function isTypingTarget(target) {
+    const el = /** @type {HTMLElement|null} */ (target);
+    if (!el) return false;
+    const tag = String(el.tagName || '').toLowerCase();
+    return tag === 'input' || tag === 'select' || tag === 'textarea' || el.isContentEditable;
   }
 
   function saveSettings(settings) {
@@ -181,21 +198,37 @@
       defaultCollapsed: true,
     });
 
-    // Mobile hint: tell users how to open the panel (reduces confusion when auto-collapsed)
+    // HUD hints: keep lightweight and contextual
     const elHudHint = document.querySelector('.hud__hint');
+    const elHudMeta = document.getElementById('hud-meta');
     const elPanel = document.querySelector('.controls');
     const elPanelToggle = document.getElementById('ctl-panel-toggle');
     const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches;
     const defaultHudHint = elHudHint?.textContent || '';
 
+    let statusLine = '';
+    let fpsLine = '';
+
+    function setStatusLine(text) {
+      statusLine = String(text || '');
+      if (elHudMeta) elHudMeta.textContent = [statusLine, fpsLine].filter(Boolean).join('\n');
+    }
+
+    function setFpsLine(text) {
+      fpsLine = String(text || '');
+      if (elHudMeta) elHudMeta.textContent = [statusLine, fpsLine].filter(Boolean).join('\n');
+    }
+
     function syncHudHint() {
       if (!elHudHint) return;
       if (!isCoarse) {
-        elHudHint.textContent = defaultHudHint;
+        elHudHint.textContent = 'Di chuột để 3D • Cuộn để zoom • P: Tùy biến';
         return;
       }
       const collapsed = Boolean(elPanel?.classList.contains('is-collapsed'));
-      elHudHint.textContent = collapsed ? 'Nhấn “Tùy biến” để mở bảng điều khiển' : 'Dùng các slider để tuỳ biến hiệu ứng';
+      elHudHint.textContent = collapsed
+        ? 'Nhấn “Tùy biến” để mở bảng điều khiển'
+        : 'Dùng các slider để tuỳ biến • Cuộn để zoom';
     }
 
     syncHudHint();
@@ -219,12 +252,19 @@
     const elFreeflySpeed = document.getElementById('ctl-freeflyspeed');
     const elColor = document.getElementById('ctl-color');
     const elWind = document.getElementById('ctl-wind');
+    const elZoom = document.getElementById('ctl-zoom');
     const elSway = document.getElementById('ctl-sway');
     const elSnow = document.getElementById('ctl-snow');
     const elSnowAmt = document.getElementById('ctl-snowamt');
+    const elSnowSpeed = document.getElementById('ctl-snowspeed');
+    const elSnowSize = document.getElementById('ctl-snowsize');
+    const elAdaptiveSnow = document.getElementById('ctl-adaptivesnow');
+    const elGyroLook = document.getElementById('ctl-gyrol');
     const elGarland = document.getElementById('ctl-garland');
     const elPerf = document.getElementById('ctl-perf');
     const elReset = document.getElementById('ctl-reset');
+
+    const elPreset = document.getElementById('ctl-preset');
 
     const elDensityVal = document.getElementById('ctl-density-val');
     const elSizeVal = document.getElementById('ctl-size-val');
@@ -233,8 +273,11 @@
     const elFreeflySpeedVal = document.getElementById('ctl-freeflyspeed-val');
     const elColorVal = document.getElementById('ctl-color-val');
     const elWindVal = document.getElementById('ctl-wind-val');
+    const elZoomVal = document.getElementById('ctl-zoom-val');
     const elSwayVal = document.getElementById('ctl-sway-val');
     const elSnowAmtVal = document.getElementById('ctl-snowamt-val');
+    const elSnowSpeedVal = document.getElementById('ctl-snowspeed-val');
+    const elSnowSizeVal = document.getElementById('ctl-snowsize-val');
 
     // Music
     const audio = /** @type {HTMLAudioElement|null} */ (document.getElementById('bgm'));
@@ -242,6 +285,11 @@
     const elTrack = document.getElementById('ctl-track');
     const elVolume = document.getElementById('ctl-volume');
     const elVolumeVal = document.getElementById('ctl-volume-val');
+
+    const elShuffle = document.getElementById('ctl-shuffle');
+    const elNext = document.getElementById('ctl-next');
+    const elCopy = document.getElementById('ctl-copy');
+    const elPaste = document.getElementById('ctl-paste');
 
     function syncUI() {
       if (elDensity) elDensity.value = String(settings.density);
@@ -252,9 +300,14 @@
       if (elFreeflySpeed) elFreeflySpeed.value = String(settings.freeflySpeed);
       if (elColor) elColor.value = String(settings.color);
       if (elWind) elWind.value = String(settings.wind);
+      if (elZoom) elZoom.value = String(settings.zoom);
       if (elSway) elSway.value = String(settings.sway);
       if (elSnow) elSnow.checked = Boolean(settings.snow);
       if (elSnowAmt) elSnowAmt.value = String(settings.snowAmount);
+      if (elSnowSpeed) elSnowSpeed.value = String(settings.snowSpeed);
+      if (elSnowSize) elSnowSize.value = String(settings.snowSize);
+      if (elAdaptiveSnow) elAdaptiveSnow.checked = Boolean(settings.adaptiveSnow);
+      if (elGyroLook) elGyroLook.checked = Boolean(settings.gyroLook);
       if (elGarland) elGarland.checked = Boolean(settings.garland);
       if (elPerf) elPerf.checked = Boolean(settings.perf);
 
@@ -270,16 +323,24 @@
         const strength = a < 0.2 ? 'Nhẹ' : a < 0.55 ? 'Vừa' : 'Mạnh';
         elWindVal.textContent = a < 0.01 ? 'Tắt' : `${dir} ${strength}`;
       }
+      if (elZoomVal) elZoomVal.textContent = `${settings.zoom.toFixed(2)}×`;
       if (elSwayVal) elSwayVal.textContent = `${settings.sway.toFixed(2)}×`;
       if (elSnowAmtVal) elSnowAmtVal.textContent = `${settings.snowAmount.toFixed(2)}×`;
+      if (elSnowSpeedVal) elSnowSpeedVal.textContent = `${settings.snowSpeed.toFixed(2)}×`;
+      if (elSnowSizeVal) elSnowSizeVal.textContent = `${settings.snowSize.toFixed(2)}×`;
       if (elFreeflySpeedVal) elFreeflySpeedVal.textContent = `${settings.freeflySpeed.toFixed(2)}×`;
 
       if (elMouse) elMouse.disabled = Boolean(settings.freefly);
       if (elSnowAmt) elSnowAmt.disabled = !Boolean(settings.snow);
+      if (elSnowSpeed) elSnowSpeed.disabled = !Boolean(settings.snow);
+      if (elSnowSize) elSnowSize.disabled = !Boolean(settings.snow);
+      if (elAdaptiveSnow) elAdaptiveSnow.disabled = !Boolean(settings.snow);
 
       if (elMusic) elMusic.checked = Boolean(settings.music);
       if (elVolume) elVolume.value = String(settings.volume);
       if (elVolumeVal) elVolumeVal.textContent = `${Math.round(settings.volume * 100)}%`;
+
+      if (elShuffle) elShuffle.checked = Boolean(settings.shuffle);
     }
 
     function applyToScene({ rebuild } = { rebuild: false }) {
@@ -293,6 +354,10 @@
           zoom: settings.zoom,
           snow: settings.snow,
           snowAmount: settings.snowAmount,
+          snowSpeed: settings.snowSpeed,
+          snowSize: settings.snowSize,
+          adaptiveSnow: settings.adaptiveSnow,
+          gyroLook: settings.gyroLook,
           wind: settings.wind,
           garland: settings.garland,
           perf: settings.perf,
@@ -304,6 +369,60 @@
       );
     }
 
+    function applyPreset(kind) {
+      const k = String(kind || 'custom');
+      if (k === 'soft') {
+        Object.assign(settings, {
+          perf: false,
+          density: 1.05,
+          glow: 1.05,
+          size: 1.05,
+          color: 0.9,
+          snow: true,
+          snowAmount: 0.85,
+          snowSpeed: 0.95,
+          snowSize: 0.95,
+          wind: 0.12,
+          sway: 0.35,
+        });
+        return true;
+      }
+      if (k === 'vivid') {
+        Object.assign(settings, {
+          perf: false,
+          density: 1.35,
+          glow: 1.55,
+          size: 1.15,
+          color: 1.25,
+          snow: true,
+          snowAmount: 1.35,
+          snowSpeed: 1.1,
+          snowSize: 1.1,
+          wind: 0.2,
+          sway: 0.55,
+        });
+        return true;
+      }
+      if (k === 'perf') {
+        Object.assign(settings, {
+          perf: true,
+          density: 0.9,
+          glow: 0.95,
+          size: 1,
+          color: 1,
+          snow: true,
+          snowAmount: 0.7,
+          snowSpeed: 0.95,
+          snowSize: 0.9,
+          garland: false,
+          wind: 0.1,
+          sway: 0.25,
+        });
+        return true;
+      }
+      return false;
+    }
+
     function onSettingsChange({ rebuild } = { rebuild: false }) {
       saveSettings(settings);
       syncUI();
@@ -311,6 +430,11 @@
     }
 
     // Wire sliders/toggles
+    elPreset?.addEventListener('change', () => {
+      const applied = applyPreset(String(elPreset.value || 'custom'));
+      if (applied) onSettingsChange({ rebuild: true });
+    });
+
     elDensity?.addEventListener('input', () => {
       settings.density = clamp(Number(elDensity.value), 0.7, 1.6);
       onSettingsChange({ rebuild: true });
@@ -351,6 +475,11 @@
       onSettingsChange({ rebuild: false });
     });
 
+    elZoom?.addEventListener('input', () => {
+      settings.zoom = clamp(Number(elZoom.value), 0.7, 1.6);
+      onSettingsChange({ rebuild: false });
+    });
+
     elSway?.addEventListener('input', () => {
       settings.sway = clamp(Number(elSway.value), 0, 1.6);
       onSettingsChange({ rebuild: false });
@@ -366,6 +495,26 @@
       onSettingsChange({ rebuild: true });
     });
 
+    elSnowSpeed?.addEventListener('input', () => {
+      settings.snowSpeed = clamp(Number(elSnowSpeed.value), 0.5, 2);
+      onSettingsChange({ rebuild: false });
+    });
+
+    elSnowSize?.addEventListener('input', () => {
+      settings.snowSize = clamp(Number(elSnowSize.value), 0.5, 2);
+      onSettingsChange({ rebuild: false });
+    });
+
+    elAdaptiveSnow?.addEventListener('change', () => {
+      settings.adaptiveSnow = Boolean(elAdaptiveSnow.checked);
+      onSettingsChange({ rebuild: true });
+    });
+
+    elGyroLook?.addEventListener('change', () => {
+      settings.gyroLook = Boolean(elGyroLook.checked);
+      onSettingsChange({ rebuild: false });
+    });
+
     elGarland?.addEventListener('change', () => {
       settings.garland = Boolean(elGarland.checked);
       onSettingsChange({ rebuild: true });
@@ -379,6 +528,7 @@
     elReset?.addEventListener('click', () => {
       Object.assign(settings, { ...DEFAULT_SETTINGS });
       onSettingsChange({ rebuild: true });
+      if (elPreset) elPreset.value = 'custom';
       // music handled below
       if (audio) {
         audio.pause();
@@ -397,18 +547,21 @@
 
     function onWheel(e) {
       if (isInteractiveTarget(e.target)) return;
+      if (e.ctrlKey) return; // browser pinch-zoom gesture
       // Prefer trackpad wheel: use deltaY sign only.
       const dy = Number(e.deltaY || 0);
       if (!dy) return;
       // Negative deltaY typically means zoom in.
-      const step = 0.05;
+      const baseStep = 0.05;
+      const intensity = clamp(Math.abs(dy) / 100, 0.55, 2.5);
       const dir = dy < 0 ? 1 : -1;
-      settings.zoom = clamp(Number(settings.zoom || 1) + dir * step, 0.7, 1.6);
+      settings.zoom = clamp(Number(settings.zoom || 1) + dir * baseStep * intensity, 0.7, 1.6);
       onSettingsChange({ rebuild: false });
       e.preventDefault();
     }
 
-    window.addEventListener('wheel', onWheel, { passive: false });
+    const canvas = document.getElementById('scene');
+    (canvas || window).addEventListener('wheel', onWheel, { passive: false, capture: true });
 
     // Music wiring (best-effort autoplay)
     let tracks = [];
@@ -443,6 +596,7 @@
       audio.volume = settings.volume;
       if (!settings.music) {
         audio.pause();
+        setStatusLine('');
         return;
       }
 
@@ -456,14 +610,17 @@
 
       try {
         await audio.play();
+        setStatusLine('');
       } catch {
         // Autoplay blocked; will start on user gesture.
+        setStatusLine('Nhấn/click để bật nhạc');
         const unlock = async () => {
           try {
             await audio.play();
           } catch {
             // ignore
           }
+          setStatusLine('');
           window.removeEventListener('pointerdown', unlock);
           window.removeEventListener('touchstart', unlock);
           window.removeEventListener('keydown', unlock);
@@ -493,6 +650,153 @@
       saveSettings(settings);
       applyAudio();
     });
+
+    elShuffle?.addEventListener('change', () => {
+      settings.shuffle = Boolean(elShuffle.checked);
+      saveSettings(settings);
+      syncUI();
+    });
+
+    function nextTrack() {
+      if (!tracks.length) return;
+      const current = settings.track;
+      const idx = tracks.findIndex((t) => t.src === current);
+
+      let next = tracks[0];
+      if (settings.shuffle) {
+        const n = tracks.length;
+        if (n === 1) next = tracks[0];
+        else {
+          let tries = 6;
+          while (tries-- > 0) {
+            const pick = tracks[Math.floor(Math.random() * n)];
+            if (pick.src !== current) {
+              next = pick;
+              break;
+            }
+          }
+        }
+      } else {
+        next = tracks[(Math.max(0, idx) + 1) % tracks.length];
+      }
+
+      settings.track = next.src;
+      saveSettings(settings);
+      if (elTrack) elTrack.value = settings.track;
+      applyAudio();
+    }
+
+    elNext?.addEventListener('click', async () => {
+      await ensureTracks();
+      nextTrack();
+    });
+
+    elCopy?.addEventListener('click', async () => {
+      const text = JSON.stringify(settings);
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatusLine('Đã copy cấu hình');
+        setTimeout(() => setStatusLine(''), 1400);
+      } catch {
+        // Fallback: show prompt for manual copy
+        window.prompt('Copy JSON settings:', text);
+      }
+    });
+
+    elPaste?.addEventListener('click', () => {
+      const raw = window.prompt('Paste JSON settings:');
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') throw new Error('bad');
+        // Best-effort validation using the same bounds as loadSettings.
+        if ('density' in parsed) settings.density = clamp(Number(parsed.density), 0.7, 1.6);
+        if ('size' in parsed) settings.size = clamp(Number(parsed.size), 0.75, 1.7);
+        if ('glow' in parsed) settings.glow = clamp(Number(parsed.glow), 0.6, 1.9);
+        if ('mouse' in parsed) settings.mouse = clamp(Number(parsed.mouse), 0, 1.8);
+        if ('color' in parsed) settings.color = clamp(Number(parsed.color), 0, 1.6);
+        if ('zoom' in parsed) settings.zoom = clamp(Number(parsed.zoom), 0.7, 1.6);
+        if ('snow' in parsed) settings.snow = toBool(parsed.snow, settings.snow);
+        if ('snowAmount' in parsed) settings.snowAmount = clamp(Number(parsed.snowAmount), 0.2, 2.2);
+        if ('snowSpeed' in parsed) settings.snowSpeed = clamp(Number(parsed.snowSpeed), 0.5, 2);
+        if ('snowSize' in parsed) settings.snowSize = clamp(Number(parsed.snowSize), 0.5, 2);
+        if ('adaptiveSnow' in parsed) settings.adaptiveSnow = toBool(parsed.adaptiveSnow, settings.adaptiveSnow);
+        if ('gyroLook' in parsed) settings.gyroLook = toBool(parsed.gyroLook, settings.gyroLook);
+        if ('wind' in parsed) settings.wind = clamp(Number(parsed.wind), -1, 1);
+        if ('garland' in parsed) settings.garland = toBool(parsed.garland, settings.garland);
+        if ('perf' in parsed) settings.perf = toBool(parsed.perf, settings.perf);
+        if ('sway' in parsed) settings.sway = clamp(Number(parsed.sway), 0, 1.6);
+        if ('freefly' in parsed) settings.freefly = toBool(parsed.freefly, settings.freefly);
+        if ('freeflySpeed' in parsed) settings.freeflySpeed = clamp(Number(parsed.freeflySpeed), 0.2, 2.2);
+        if ('music' in parsed) settings.music = toBool(parsed.music, settings.music);
+        if ('volume' in parsed) settings.volume = clamp(Number(parsed.volume), 0, 1);
+        if ('track' in parsed) settings.track = String(parsed.track || '');
+        if ('shuffle' in parsed) settings.shuffle = toBool(parsed.shuffle, settings.shuffle);
+
+        onSettingsChange({ rebuild: true });
+        setStatusLine('Đã áp dụng cấu hình');
+        setTimeout(() => setStatusLine(''), 1400);
+      } catch {
+        setStatusLine('JSON không hợp lệ');
+        setTimeout(() => setStatusLine(''), 1600);
+      }
+    });
+
+    // Keyboard shortcuts (avoid when typing in inputs)
+    window.addEventListener('keydown', (e) => {
+      if (isTypingTarget(e.target)) return;
+      const k = String(e.key || '').toLowerCase();
+      if (k === 'p') {
+        elPanelToggle?.click();
+        e.preventDefault();
+      } else if (k === 'r') {
+        elReset?.click();
+        e.preventDefault();
+      } else if (k === 'm') {
+        if (elMusic) {
+          elMusic.checked = !elMusic.checked;
+          settings.music = Boolean(elMusic.checked);
+          saveSettings(settings);
+          syncUI();
+          applyAudio();
+        }
+        e.preventDefault();
+      } else if (k === 'f') {
+        if (elFreefly) {
+          elFreefly.checked = !elFreefly.checked;
+          settings.freefly = Boolean(elFreefly.checked);
+          onSettingsChange({ rebuild: false });
+        }
+        e.preventDefault();
+      } else if (k === 'n') {
+        void ensureTracks().then(() => nextTrack());
+        e.preventDefault();
+      }
+    });
+
+    // Lightweight FPS estimation for UX hints
+    {
+      let last = performance.now();
+      let acc = 0;
+      let frames = 0;
+      function raf(now) {
+        const dt = now - last;
+        last = now;
+        if (dt > 0 && dt < 250) {
+          acc += dt;
+          frames++;
+          if (acc >= 600) {
+            const fps = Math.round((frames * 1000) / acc);
+            const hint = fps < 45 ? ' • Gợi ý: bật Performance' : '';
+            setFpsLine(`FPS ~ ${fps}${hint}`);
+            acc = 0;
+            frames = 0;
+          }
+        }
+        requestAnimationFrame(raf);
+      }
+      requestAnimationFrame(raf);
+    }
 
     // Init
     syncUI();

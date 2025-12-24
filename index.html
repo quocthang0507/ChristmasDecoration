@@ -46,6 +46,17 @@
       </label>
 
       <label class="controls__row">
+        <span class="controls__label">Preset</span>
+        <select id="ctl-preset" class="controls__select" aria-label="Chọn preset">
+          <option value="custom">Tuỳ chỉnh</option>
+          <option value="soft">Êm dịu</option>
+          <option value="vivid">Rực rỡ</option>
+          <option value="perf">Nhẹ máy</option>
+        </select>
+        <span class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
         <span class="controls__label">Mật độ</span>
         <input id="ctl-density" type="range" min="0.7" max="1.6" step="0.05" />
         <span id="ctl-density-val" class="controls__val"></span>
@@ -93,6 +104,12 @@
       </label>
 
       <label class="controls__row">
+        <span class="controls__label">Zoom</span>
+        <input id="ctl-zoom" type="range" min="0.7" max="1.6" step="0.02" />
+        <span id="ctl-zoom-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
         <span class="controls__label">Auto sway</span>
         <input id="ctl-sway" type="range" min="0" max="1.6" step="0.05" />
         <span id="ctl-sway-val" class="controls__val"></span>
@@ -109,6 +126,28 @@
         <span id="ctl-snowamt-val" class="controls__val"></span>
       </label>
 
+      <label class="controls__row">
+        <span class="controls__label">Tốc độ tuyết</span>
+        <input id="ctl-snowspeed" type="range" min="0.5" max="2" step="0.05" />
+        <span id="ctl-snowspeed-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Kích thước tuyết</span>
+        <input id="ctl-snowsize" type="range" min="0.5" max="2" step="0.05" />
+        <span id="ctl-snowsize-val" class="controls__val"></span>
+      </label>
+
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Adaptive tuyết</span>
+        <input id="ctl-adaptivesnow" type="checkbox" />
+      </label>
+
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Nghiêng để xoay</span>
+        <input id="ctl-gyrol" type="checkbox" />
+      </label>
+
       <label class="controls__row controls__row--toggle">
         <span class="controls__label">Dây đèn xoắn</span>
         <input id="ctl-garland" type="checkbox" />
@@ -119,12 +158,35 @@
         <input id="ctl-perf" type="checkbox" />
       </label>
 
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Shuffle</span>
+        <input id="ctl-shuffle" type="checkbox" />
+      </label>
+
+      <div class="controls__row">
+        <span class="controls__label">Nhạc</span>
+        <div class="controls__btnpair" role="group" aria-label="Điều khiển nhạc">
+          <button id="ctl-next" class="controls__btn controls__btn--mini" type="button">Next</button>
+        </div>
+        <span class="controls__val"></span>
+      </div>
+
+      <div class="controls__row">
+        <span class="controls__label">Chia sẻ</span>
+        <div class="controls__btnpair" role="group" aria-label="Chia sẻ cấu hình">
+          <button id="ctl-copy" class="controls__btn controls__btn--mini" type="button">Copy</button>
+          <button id="ctl-paste" class="controls__btn controls__btn--mini" type="button">Paste</button>
+        </div>
+        <span class="controls__val"></span>
+      </div>
+
       <button id="ctl-reset" class="controls__btn" type="button">Reset</button>
     </div>
 
     <div class="hud" aria-hidden="true">
       <div class="hud__title">Merry Christmas</div>
       <div class="hud__hint">Move your mouse / trackpad</div>
+      <div class="hud__meta" id="hud-meta"></div>
     </div>
 
     <audio id="bgm" preload="auto" playsinline></audio>
