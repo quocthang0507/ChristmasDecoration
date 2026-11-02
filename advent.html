@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="Lịch Mùa Vọng: mỗi ngày từ 1 đến 24/12 mở một ô với một thử thách nhỏ đón Giáng Sinh." />
+    <meta name="theme-color" content="#07101d" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%84%3C/text%3E%3C/svg%3E" />
+    <title>Lịch Mùa Vọng</title>
+    <link rel="stylesheet" href="./ui.css" />
+    <link rel="stylesheet" href="./advent.css" />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Christmas lights tree canvas"></canvas>
+
+    <nav class="nav" aria-label="Điều hướng">
+      <a class="nav__link" href="./index.html">Cây thông</a>
+      <a class="nav__link" href="./card.html">Thiệp chúc mừng</a>
+      <a class="nav__link" href="./countdown.html">Đếm ngược</a>
+      <a class="nav__link nav__link--active" href="./advent.html">Lịch Mùa Vọng</a>
+      <a class="nav__link" href="./santa.html">Secret Santa</a>
+      <a class="nav__link" href="./fireworks.html">Pháo hoa</a>
+      <a class="nav__link" href="./globe.html">Snow Globe</a>
+      <a class="nav__link" href="./immersive.html">3D nhập vai</a>
+      <a class="nav__link" href="./benchmark.html">Benchmark</a>
+    </nav>
+
+    <main class="advent" aria-label="Lịch Mùa Vọng">
+      <header class="advent__head">
+        <h1 class="advent__title">Lịch Mùa Vọng</h1>
+        <p class="advent__sub">24 ngày, 24 thử thách nhỏ cho một mùa Giáng Sinh ấm áp</p>
+        <p id="advent-progress" class="advent__progress"></p>
+      </header>
+      <div id="advent-grid" class="advent__grid"></div>
+    </main>
+
+    <section class="card-ui__panel" aria-label="Tuỳ chọn lịch">
+      <div class="card-ui__header">
+        <div class="card-ui__title">Lịch Mùa Vọng</div>
+        <button id="advent-panel-toggle" class="card-ui__toggle" type="button" aria-expanded="true">Panel</button>
+      </div>
+
+      <div id="advent-note" class="card-ui__status"></div>
+
+      <label class="card-ui__row card-ui__row--toggle">
+        <span class="card-ui__label">Xem trước (không tính tiến độ)</span>
+        <input id="advent-preview" type="checkbox" />
+      </label>
+
+      <button id="advent-reset" class="card-ui__btn" type="button">Xoá tiến độ</button>
+    </section>
+
+    <dialog id="advent-dialog" class="advent__dialog">
+      <form method="dialog" class="advent__dlg">
+        <div id="advent-dlg-day" class="advent__dlg-day"></div>
+        <div id="advent-dlg-emoji" class="advent__dlg-emoji" aria-hidden="true"></div>
+        <h2 id="advent-dlg-title" class="advent__dlg-title"></h2>
+        <p id="advent-dlg-text" class="advent__dlg-text"></p>
+        <label class="advent__dlg-done">
+          <input id="advent-dlg-done" type="checkbox" />
+          <span>Mình đã làm xong!</span>
+        </label>
+        <button class="card-ui__btn" type="submit">Đóng</button>
+      </form>
+    </dialog>
+
+    <script src="./ui.js" defer></script>
+    <script src="./scene.js" defer></script>
+    <script src="./advent.js" defer></script>
+  </body>
+</html>

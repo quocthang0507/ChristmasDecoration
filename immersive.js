@@ -752,7 +752,7 @@ async function startCamera() {
   }
 
   hands = new window.Hands({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`,
   });
 
   hands.setOptions({

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="Bốc thăm Secret Santa online: mỗi người nhận một link riêng và cào để xem mình tặng quà cho ai." />
+    <meta name="theme-color" content="#07101d" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%84%3C/text%3E%3C/svg%3E" />
+    <title>Secret Santa</title>
+    <link rel="stylesheet" href="./ui.css" />
+    <link rel="stylesheet" href="./santa.css" />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Christmas lights tree canvas"></canvas>
+
+    <nav class="nav" aria-label="Điều hướng">
+      <a class="nav__link" href="./index.html">Cây thông</a>
+      <a class="nav__link" href="./card.html">Thiệp chúc mừng</a>
+      <a class="nav__link" href="./countdown.html">Đếm ngược</a>
+      <a class="nav__link" href="./advent.html">Lịch Mùa Vọng</a>
+      <a class="nav__link nav__link--active" href="./santa.html">Secret Santa</a>
+      <a class="nav__link" href="./fireworks.html">Pháo hoa</a>
+      <a class="nav__link" href="./globe.html">Snow Globe</a>
+      <a class="nav__link" href="./immersive.html">3D nhập vai</a>
+      <a class="nav__link" href="./benchmark.html">Benchmark</a>
+    </nav>
+
+    <main class="santa">
+      <section id="santa-setup" class="santa__card" aria-label="Bốc thăm Secret Santa">
+        <h1 class="santa__title">🎅 Secret Santa</h1>
+        <p class="santa__sub">Nhập tên mọi người, bốc thăm, rồi gửi riêng cho mỗi người một link. Không ai (kể cả bạn) biết ai tặng ai.</p>
+
+        <label class="santa__field">
+          <span>Tên sự kiện</span>
+          <input id="santa-event" class="card-ui__input" type="text" maxlength="60" placeholder="Ví dụ: Tiệc Noel phòng IT" />
+        </label>
+
+        <div class="santa__two">
+          <label class="santa__field">
+            <span>Ngân sách</span>
+            <input id="santa-budget" class="card-ui__input" type="text" maxlength="30" placeholder="Ví dụ: 200.000đ" />
+          </label>
+          <label class="santa__field">
+            <span>Ngày trao quà</span>
+            <input id="santa-date" class="card-ui__input" type="date" />
+          </label>
+        </div>
+
+        <label class="santa__field">
+          <span>Người tham gia (mỗi dòng một tên, tối thiểu 3)</span>
+          <textarea id="santa-names" class="card-ui__textarea" rows="6" placeholder="An&#10;Bình&#10;Chi&#10;Dũng"></textarea>
+        </label>
+
+        <label class="santa__field">
+          <span>Không bốc trúng nhau (tuỳ chọn, ví dụ: <code>An - Bình</code>)</span>
+          <textarea id="santa-exclude" class="card-ui__textarea" rows="2" placeholder="An - Bình"></textarea>
+        </label>
+
+        <button id="santa-draw" class="santa__btn santa__btn--primary" type="button">🎲 Bốc thăm</button>
+        <div id="santa-status" class="card-ui__status" role="status" aria-live="polite"></div>
+
+        <div id="santa-results" class="santa__results" hidden>
+          <ul id="santa-list" class="santa__list"></ul>
+          <button id="santa-copy-all" class="santa__btn" type="button">Copy tất cả link</button>
+          <p class="santa__fine">Link chỉ được làm rối nhẹ để tránh lộ khi nhìn lướt, không phải mã hoá. Mọi thứ chạy trên trình duyệt của bạn, không gửi lên máy chủ.</p>
+        </div>
+      </section>
+
+      <section id="santa-reveal" class="santa__card santa__card--reveal" aria-label="Kết quả Secret Santa" hidden>
+        <div id="santa-event-name" class="santa__eyebrow"></div>
+        <h1 id="santa-hello" class="santa__title"></h1>
+        <p class="santa__sub">Bạn sẽ là Secret Santa của…</p>
+        <div class="santa__scratch">
+          <div id="santa-target" class="santa__target"></div>
+          <canvas id="santa-scratch" class="santa__foil" tabindex="0" aria-label="Thẻ cào: kéo để cào, hoặc nhấn Enter để mở"></canvas>
+        </div>
+        <div id="santa-after" hidden>
+          <p class="santa__sub">🤫 Giữ bí mật nhé!</p>
+          <p id="santa-details" class="santa__details"></p>
+          <a class="santa__btn" href="./card.html">💌 Viết thiệp kèm quà</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="./ui.js" defer></script>
+    <script src="./scene.js" defer></script>
+    <script src="./santa.js" defer></script>
+  </body>
+</html>
