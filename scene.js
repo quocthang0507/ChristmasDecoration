@@ -760,6 +760,8 @@
     const rx = rotateX(s.y - h * 0.15, ry.z, pitch);
 
     const proj = projectPoint(ry.x, rx.y + h * 0.15, rx.z);
+    // Behind (or at) the camera plane: scale goes negative/infinite, so skip.
+    if (!(proj.s > 0 && proj.s < 10)) return;
 
     const a = 0.12 + 0.18 * Math.sin(now * 0.0014 + s.phase) + boost * 0.10;
     const r = s.size * (0.75 + proj.s * 0.55) * snowSize;
@@ -1072,7 +1074,8 @@
       const prx = rotateX(fw.py - state.h * 0.15, pry.z, state.pitch);
       const pproj = projectPoint(pry.x, prx.y + state.h * 0.15, prx.z);
 
-      // Skip if far outside viewport.
+      // Skip if behind the camera or far outside viewport.
+      if (!(proj.s > 0 && proj.s < 10) || !(pproj.s > 0 && pproj.s < 10)) continue;
       if (proj.x < -80 || proj.x > state.w + 80 || proj.y < -120 || proj.y > state.h + 120) continue;
 
       const life01 = clamp(fw.life / Math.max(1, fw.life0), 0, 1);
