@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="Cây thông Noel từ hàng nghìn đốm sáng lung linh, tuyết rơi, nhạc nền và hiệu ứng 3D." />
+    <meta name="theme-color" content="#07101d" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%84%3C/text%3E%3C/svg%3E" />
     <title>Christmas Lights Tree</title>
     <link rel="stylesheet" href="./ui.css" />
     <link rel="stylesheet" href="./style.css" />
@@ -14,6 +17,8 @@
       <a class="nav__link nav__link--active" href="./index.html">Cây thông</a>
       <a class="nav__link" href="./card.html">Thiệp chúc mừng</a>
       <a class="nav__link" href="./countdown.html">Đếm ngược</a>
+      <a class="nav__link" href="./advent.html">Lịch Mùa Vọng</a>
+      <a class="nav__link" href="./santa.html">Secret Santa</a>
       <a class="nav__link" href="./fireworks.html">Pháo hoa</a>
       <a class="nav__link" href="./globe.html">Snow Globe</a>
       <a class="nav__link" href="./immersive.html">3D nhập vai</a>
@@ -163,9 +168,15 @@
         <input id="ctl-shuffle" type="checkbox" />
       </label>
 
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Lặp 1 bài</span>
+        <input id="ctl-loopone" type="checkbox" />
+      </label>
+
       <div class="controls__row">
         <span class="controls__label">Nhạc</span>
         <div class="controls__btnpair" role="group" aria-label="Điều khiển nhạc">
+          <button id="ctl-prev" class="controls__btn controls__btn--mini" type="button">Prev</button>
           <button id="ctl-next" class="controls__btn controls__btn--mini" type="button">Next</button>
         </div>
         <span class="controls__val"></span>
@@ -176,6 +187,38 @@
         <div class="controls__btnpair" role="group" aria-label="Chia sẻ cấu hình">
           <button id="ctl-copy" class="controls__btn controls__btn--mini" type="button">Copy</button>
           <button id="ctl-paste" class="controls__btn controls__btn--mini" type="button">Paste</button>
+          <button id="ctl-link" class="controls__btn controls__btn--mini" type="button">Link</button>
+        </div>
+        <span class="controls__val"></span>
+      </div>
+
+      <div class="controls__row">
+        <span class="controls__label">Màn hình</span>
+        <div class="controls__btnpair" role="group" aria-label="Ảnh và toàn màn hình">
+          <button id="ctl-shot" class="controls__btn controls__btn--mini" type="button">Chụp ảnh</button>
+          <button id="ctl-fullscreen" class="controls__btn controls__btn--mini" type="button">Toàn màn hình</button>
+        </div>
+        <span class="controls__val"></span>
+      </div>
+
+      <label class="controls__row controls__row--toggle">
+        <span class="controls__label">Thổi micro 🌬️</span>
+        <input id="ctl-mic" type="checkbox" />
+      </label>
+
+      <label class="controls__row">
+        <span class="controls__label">Khung clip</span>
+        <select id="ctl-clipfmt" class="controls__select" aria-label="Khung hình clip">
+          <option value="vertical">9:16 (TikTok / Reels)</option>
+          <option value="screen">Toàn màn hình</option>
+        </select>
+        <span class="controls__val"></span>
+      </label>
+
+      <div class="controls__row">
+        <span class="controls__label">Clip</span>
+        <div class="controls__btnpair" role="group" aria-label="Quay clip">
+          <button id="ctl-clip" class="controls__btn controls__btn--mini" type="button">Quay clip 10s</button>
         </div>
         <span class="controls__val"></span>
       </div>
@@ -193,6 +236,7 @@
 
     <script src="./ui.js" defer></script>
     <script src="./scene.js" defer></script>
+    <script src="./export.js" defer></script>
     <script src="./index.js" defer></script>
   </body>
 </html>

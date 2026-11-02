@@ -5,6 +5,8 @@ Demo (GitHub Pages): https://quocthang0507.github.io/ChristmasDecoration/
 - Tree: https://quocthang0507.github.io/ChristmasDecoration/index.html
 - Card: https://quocthang0507.github.io/ChristmasDecoration/card.html
 - Countdown: https://quocthang0507.github.io/ChristmasDecoration/countdown.html
+- Lịch Mùa Vọng: https://quocthang0507.github.io/ChristmasDecoration/advent.html
+- Secret Santa: https://quocthang0507.github.io/ChristmasDecoration/santa.html
 - Fireworks: https://quocthang0507.github.io/ChristmasDecoration/fireworks.html
 - Snow Globe: https://quocthang0507.github.io/ChristmasDecoration/globe.html
 - Benchmark: https://quocthang0507.github.io/ChristmasDecoration/benchmark.html
@@ -27,23 +29,29 @@ Ngoài trang cây thông, dự án có thêm các trang mini (thiệp, countdown
 - Tuỳ chỉnh lượng tuyết rơi
 - Zoom bằng cuộn chuột (và slider Zoom)
 - Preset nhanh (Êm dịu / Rực rỡ / Nhẹ máy)
-- Phím tắt: `P` (panel), `R` (reset), `M` (nhạc), `F` (bay tự do), `N` (next track)
-- Chia sẻ cấu hình: Copy/Paste JSON settings
-- Nhạc: Shuffle + Next
+- Phím tắt: `P` (panel), `R` (reset), `M` (nhạc), `F` (bay tự do), `N`/`B` (bài sau/trước), `S` (chụp ảnh), `H` (toàn màn hình)
+- Chia sẻ cấu hình: Copy/Paste JSON settings hoặc **Link** (cấu hình được mã hoá trong URL `#s=...`)
+- Chụp ảnh cây thông thành PNG + chế độ toàn màn hình
+- **Quay clip 10 giây** (khung 9:16 cho TikTok/Reels/Shorts hoặc toàn màn hình), kèm nhạc nền và chữ “Merry Christmas”; trên điện thoại mở thẳng bảng chia sẻ. Phím tắt `V`
+- **Thổi micro 🌬️**: thổi vào micro để tạo gió cuốn tuyết, thổi mạnh và lâu thì cây bừng sáng
+- Nhạc: phát hết bài sẽ tự chuyển bài (playlist), Shuffle, Prev/Next, tuỳ chọn Lặp 1 bài
 - Tuỳ chỉnh tuyết nâng cao: tốc độ + kích thước + Adaptive tuyết (giảm tuyết khi FPS thấp)
 - Mobile: tuỳ chọn “Nghiêng để xoay” (gyro look)
 - Dây đèn xoắn (garland)
 - Auto sway + Performance mode
-- Nhạc nền: bật/tắt, chọn bài, loop 1 bài, âm lượng
+- Nhạc nền: bật/tắt, chọn bài, lặp 1 bài, âm lượng
 - UI/panel thống nhất, responsive, có nút Mở/Đóng + lưu cấu hình bằng `localStorage`
-- Light/Dark mode: toggle ngay trên thanh điều hướng (lưu `localStorage`, mặc định theo system)
 
 ## Các trang
 
 - Cây thông: [index.html](index.html)
 - Thiệp chúc mừng: [card.html](card.html)
 - Đếm ngược đến 00:00: [countdown.html](countdown.html)
-	- Countdown tới Giáng Sinh/Năm Mới; khi về 0 sẽ “boost” (sáng hơn + tuyết dày hơn) trong vài giây.
+	- Countdown (ngày/giờ/phút/giây) tới Giáng Sinh, Năm Mới, Tết Nguyên Đán hoặc mốc tuỳ chọn; khi về 0 sẽ “boost” (sáng hơn + tuyết dày hơn) và hiện lời chúc suốt ngày lễ.
+- Lịch Mùa Vọng: [advent.html](advent.html)
+	- 24 ô (1–24/12), mỗi ngày mở một ô với một thử thách nhỏ; đánh dấu hoàn thành, lưu tiến độ theo mùa. Có chế độ “Xem trước”.
+- Secret Santa: [santa.html](santa.html)
+	- Nhập danh sách người tham gia (có thể loại trừ các cặp không bốc trúng nhau), bốc thăm ngẫu nhiên, mỗi người nhận link riêng và **cào thẻ** để xem mình tặng quà cho ai. Chạy hoàn toàn trên trình duyệt.
 - Pháo hoa tối giản: [fireworks.html](fireworks.html)
 	- Fireworks dạng dots/glow, có toggle bật/tắt để nhẹ máy (có adaptive theo FPS).
 - Snow Globe: [globe.html](globe.html)
@@ -56,11 +64,11 @@ Ngoài trang cây thông, dự án có thêm các trang mini (thiệp, countdown
 - Mở trang bất kỳ, dùng panel góc phải để chỉnh hiệu ứng.
 - Trên desktop: di chuột để thấy parallax/3D; cuộn để zoom.
 - Trên mobile: dùng các toggle/slider trong panel (có thể bật “Nghiêng để xoay”).
-- Nút Light/Dark nằm trên thanh điều hướng.
 
 ### Countdown
 
-- Có thể chọn mốc: Giáng Sinh / Năm Mới.
+- Có thể chọn mốc: Giáng Sinh / Năm Mới / Tết Nguyên Đán (bảng ngày Tết đến 2035) / Tuỳ chọn (chọn ngày giờ bất kỳ).
+- Tiêu đề tab trình duyệt hiển thị thời gian còn lại.
 - Khi đếm về 0, cảnh sẽ “boost” (đốm sáng/glow mạnh hơn + tuyết dày hơn) trong vài giây.
 
 ### Fireworks
@@ -99,23 +107,19 @@ Mở `http://localhost:5173`
 
 Gợi ý: mở trực tiếp bằng file vẫn chạy được, nhưng server tĩnh sẽ ổn định hơn khi load nhạc và điều hướng giữa các trang.
 
-## Theme (Light/Dark)
-
-- Toggle theme ở navbar; trạng thái được lưu trong `localStorage`.
-- Mặc định: nếu chưa chọn thủ công, theme sẽ theo `prefers-color-scheme` của hệ điều hành.
-
 ## Lưu cấu hình & Reset
 
 Nhiều tuỳ chọn/panel được lưu trong `localStorage` để lần sau mở lại vẫn giữ trạng thái. Một số key chính:
 
-- Theme: `cd.theme.v1`
 - Trang cây thông (settings): `xmasTreeSettingsV2`
 - Trang cây thông (panel): `xmasPanelCollapsedV2`
 - Thiệp (panel): `christmas.cardPanelCollapsedV2`
-- Countdown: `cd.countdown.target.v1`, `cd.countdown.panelCollapsed.v1`
-- Fireworks: `cd.fireworks.enabled.v1`, `cd.fireworks.perf.v1`, `cd.fireworks.panelCollapsed.v1`
+- Countdown: `cd.countdown.target.v1`, `cd.countdown.custom.v1`, `cd.countdown.panelCollapsed.v2`
+- Fireworks: `cd.fireworks.enabled.v2`, `cd.fireworks.perf.v1`, `cd.fireworks.panelCollapsed.v1`
 - Globe: `cd.globe.perf.v1`, `cd.globe.panelCollapsed.v1`
 - Benchmark: `cd.benchmark.perf.v1`, `cd.benchmark.last.v1`
+- Lịch Mùa Vọng: `cd.advent.<năm>.v1`, `cd.advent.panelCollapsed.v1`
+- Secret Santa (bản nháp của người tổ chức): `cd.santa.draft.v1`
 
 Reset nhanh:
 
@@ -152,7 +156,8 @@ Mới (index):
 
 - UI dùng chung:
 	- `ui.css`: theme variables + layout navbar/panel + input styles
-	- `ui.js`: init panel (mở/đóng) + theme toggle
+	- `ui.js`: init panel (mở/đóng) + đánh dấu link đang active
+	- `export.js`: chụp canvas thành PNG
 - Engine canvas:
 	- `scene.js`: render cây + tuyết + topper + fireworks + globe mode + perf stats
 - Trang:
@@ -162,6 +167,14 @@ Mới (index):
 	- `fireworks.html` / `fireworks.js`: demo pháo hoa
 	- `globe.html` / `globe.js`: snow globe
 	- `benchmark.html` / `benchmark.js`: đo hiệu năng
+	- `advent.html` / `advent.js` / `advent.css`: lịch Mùa Vọng
+	- `santa.html` / `santa.js` / `santa.css`: Secret Santa
+
+## Tương thích trình duyệt
+
+- Khuyến nghị: Chrome/Edge 111+, Safari 16.4+, Firefox 113+ (trang 3D cần import maps: Safari 16.4+).
+- Quay clip cần `MediaRecorder` + `canvas.captureStream` (Chrome/Edge/Firefox: WebM; Safari: MP4). Nhạc chỉ được ghi kèm trên trình duyệt hỗ trợ `audio.captureStream` (Chrome/Edge).
+- Thổi micro cần HTTPS (hoặc `localhost`) và quyền micro.
 
 ## Troubleshooting
 

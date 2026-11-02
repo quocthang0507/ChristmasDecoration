@@ -24,7 +24,44 @@
     volume: 0.45,
     track: '',
     shuffle: false,
+    loopOne: false,
   });
+
+  // Numeric bounds shared by storage, paste and share-link parsing.
+  const RANGES = Object.freeze({
+    density: [0.7, 1.6],
+    size: [0.75, 1.7],
+    glow: [0.6, 1.9],
+    mouse: [0, 1.8],
+    color: [0, 1.6],
+    zoom: [0.7, 1.6],
+    snowAmount: [0.2, 2.2],
+    snowSpeed: [0.5, 2],
+    snowSize: [0.5, 2],
+    wind: [-1, 1],
+    sway: [0, 1.6],
+    freeflySpeed: [0.2, 2.2],
+    volume: [0, 1],
+  });
+
+  // Keys included in a share link (audio preferences stay local).
+  const SHARE_KEYS = Object.freeze([
+    'density',
+    'size',
+    'glow',
+    'mouse',
+    'color',
+    'zoom',
+    'snow',
+    'snowAmount',
+    'snowSpeed',
+    'snowSize',
+    'wind',
+    'garland',
+    'sway',
+    'freefly',
+    'freeflySpeed',
+  ]);
 
   const STORAGE_KEY = 'xmasTreeSettingsV2';
 
@@ -43,37 +80,51 @@
     return Math.max(min, Math.min(max, v));
   }
 
+  /** Copies valid, known keys from `parsed` into `target` (clamped; invalid values ignored). */
+  function mergeSettings(target, parsed) {
+    if (!parsed || typeof parsed !== 'object') return target;
+    for (const key of Object.keys(DEFAULT_SETTINGS)) {
+      if (!(key in parsed)) continue;
+      const def = DEFAULT_SETTINGS[key];
+      const v = parsed[key];
+      if (typeof def === 'boolean') {
+        target[key] = toBool(v, target[key]);
+      } else if (typeof def === 'number') {
+        const n = Number(v);
+        if (!Number.isFinite(n)) continue;
+        const [min, max] = RANGES[key] || [-Infinity, Infinity];
+        target[key] = clamp(n, min, max);
+      } else {
+        target[key] = String(v ?? '');
+      }
+    }
+    return target;
+  }
+
   function loadSettings() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return { ...DEFAULT_SETTINGS };
-      const parsed = JSON.parse(raw);
-      return {
-        density: clamp(Number(parsed.density ?? DEFAULT_SETTINGS.density), 0.7, 1.6),
-        size: clamp(Number(parsed.size ?? DEFAULT_SETTINGS.size), 0.75, 1.7),
-        glow: clamp(Number(parsed.glow ?? DEFAULT_SETTINGS.glow), 0.6, 1.9),
-        mouse: clamp(Number(parsed.mouse ?? DEFAULT_SETTINGS.mouse), 0, 1.8),
-        color: clamp(Number(parsed.color ?? DEFAULT_SETTINGS.color), 0, 1.6),
-        zoom: clamp(Number(parsed.zoom ?? DEFAULT_SETTINGS.zoom), 0.7, 1.6),
-        snow: toBool(parsed.snow, DEFAULT_SETTINGS.snow),
-        snowAmount: clamp(Number(parsed.snowAmount ?? DEFAULT_SETTINGS.snowAmount), 0.2, 2.2),
-        snowSpeed: clamp(Number(parsed.snowSpeed ?? DEFAULT_SETTINGS.snowSpeed), 0.5, 2),
-        snowSize: clamp(Number(parsed.snowSize ?? DEFAULT_SETTINGS.snowSize), 0.5, 2),
-        adaptiveSnow: toBool(parsed.adaptiveSnow, DEFAULT_SETTINGS.adaptiveSnow),
-        gyroLook: toBool(parsed.gyroLook, DEFAULT_SETTINGS.gyroLook),
-        wind: clamp(Number(parsed.wind ?? DEFAULT_SETTINGS.wind), -1, 1),
-        garland: toBool(parsed.garland, DEFAULT_SETTINGS.garland),
-        perf: toBool(parsed.perf, DEFAULT_SETTINGS.perf),
-        sway: clamp(Number(parsed.sway ?? DEFAULT_SETTINGS.sway), 0, 1.6),
-        freefly: toBool(parsed.freefly, DEFAULT_SETTINGS.freefly),
-        freeflySpeed: clamp(Number(parsed.freeflySpeed ?? DEFAULT_SETTINGS.freeflySpeed), 0.2, 2.2),
-        music: toBool(parsed.music, DEFAULT_SETTINGS.music),
-        volume: clamp(Number(parsed.volume ?? DEFAULT_SETTINGS.volume), 0, 1),
-        track: String(parsed.track ?? DEFAULT_SETTINGS.track),
-        shuffle: toBool(parsed.shuffle, DEFAULT_SETTINGS.shuffle),
-      };
+      return mergeSettings({ ...DEFAULT_SETTINGS }, JSON.parse(raw));
     } catch {
       return { ...DEFAULT_SETTINGS };
+    }
+  }
+
+  function encodeShare(settings) {
+    const picked = {};
+    for (const k of SHARE_KEYS) picked[k] = settings[k];
+    return btoa(JSON.stringify(picked)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function decodeShare(hash) {
+    const m = /(?:^#|&)s=([A-Za-z0-9_-]+)/.exec(hash || '');
+    if (!m) return null;
+    try {
+      const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(b64));
+    } catch {
+      return null;
     }
   }
 
@@ -222,7 +273,7 @@
     function syncHudHint() {
       if (!elHudHint) return;
       if (!isCoarse) {
-        elHudHint.textContent = 'Di chuột để 3D • Cuộn để zoom • P: Tùy biến';
+        elHudHint.textContent = 'Di chuột để 3D • Cuộn để zoom • P: Tùy biến • S: Chụp ảnh • V: Quay clip • H: Toàn màn hình';
         return;
       }
       const collapsed = Boolean(elPanel?.classList.contains('is-collapsed'));
@@ -238,6 +289,17 @@
     });
 
     const settings = loadSettings();
+
+    // A share link (#s=...) overrides the visual settings, then is removed from the URL.
+    const shared = decodeShare(window.location.hash);
+    if (shared) {
+      mergeSettings(settings, shared);
+      try {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      } catch {
+        // ignore
+      }
+    }
     saveSettings(settings);
 
     // Apply to scene
@@ -287,7 +349,12 @@
     const elVolumeVal = document.getElementById('ctl-volume-val');
 
     const elShuffle = document.getElementById('ctl-shuffle');
+    const elLoopOne = document.getElementById('ctl-loopone');
+    const elPrev = document.getElementById('ctl-prev');
     const elNext = document.getElementById('ctl-next');
+    const elLink = document.getElementById('ctl-link');
+    const elShot = document.getElementById('ctl-shot');
+    const elFullscreen = document.getElementById('ctl-fullscreen');
     const elCopy = document.getElementById('ctl-copy');
     const elPaste = document.getElementById('ctl-paste');
 
@@ -341,6 +408,7 @@
       if (elVolumeVal) elVolumeVal.textContent = `${Math.round(settings.volume * 100)}%`;
 
       if (elShuffle) elShuffle.checked = Boolean(settings.shuffle);
+      if (elLoopOne) elLoopOne.checked = Boolean(settings.loopOne);
     }
 
     function applyToScene({ rebuild } = { rebuild: false }) {
@@ -592,7 +660,7 @@
 
     async function applyAudio() {
       if (!audio) return;
-      audio.loop = true;
+      audio.loop = Boolean(settings.loopOne);
       audio.volume = settings.volume;
       if (!settings.music) {
         audio.pause();
@@ -657,6 +725,28 @@
       syncUI();
     });
 
+    elLoopOne?.addEventListener('change', () => {
+      settings.loopOne = Boolean(elLoopOne.checked);
+      saveSettings(settings);
+      syncUI();
+      if (audio) audio.loop = settings.loopOne;
+    });
+
+    // Playlist mode: advance when a track finishes (audio.loop handles "Lặp 1 bài").
+    audio?.addEventListener('ended', () => {
+      if (!settings.loopOne) nextTrack();
+    });
+
+    function prevTrack() {
+      if (!tracks.length) return;
+      const idx = tracks.findIndex((t) => t.src === settings.track);
+      const prev = tracks[(Math.max(0, idx) - 1 + tracks.length) % tracks.length];
+      settings.track = prev.src;
+      saveSettings(settings);
+      if (elTrack) elTrack.value = settings.track;
+      applyAudio();
+    }
+
     function nextTrack() {
       if (!tracks.length) return;
       const current = settings.track;
@@ -691,6 +781,63 @@
       nextTrack();
     });
 
+    elPrev?.addEventListener('click', async () => {
+      await ensureTracks();
+      prevTrack();
+    });
+
+    function flashStatus(text, ms = 1400) {
+      setStatusLine(text);
+      setTimeout(() => setStatusLine(''), ms);
+    }
+
+    elLink?.addEventListener('click', async () => {
+      const url = `${window.location.origin}${window.location.pathname}#s=${encodeShare(settings)}`;
+      try {
+        if (navigator.share && isCoarse) {
+          await navigator.share({ title: document.title, url });
+          return;
+        }
+        await navigator.clipboard.writeText(url);
+        flashStatus('Đã copy link chia sẻ');
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+        window.prompt('Copy link chia sẻ:', url);
+      }
+    });
+
+    function takeScreenshot() {
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      window.CD_Export?.downloadCanvasAsImage('scene', `christmas-tree-${stamp}.png`);
+    }
+
+    function toggleFullscreen() {
+      const doc = /** @type {any} */ (document);
+      const root = /** @type {any} */ (document.documentElement);
+      if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+        (doc.exitFullscreen || doc.webkitExitFullscreen)?.call(doc);
+      } else {
+        const req = root.requestFullscreen || root.webkitRequestFullscreen;
+        if (!req) {
+          flashStatus('Trình duyệt không hỗ trợ toàn màn hình');
+          return;
+        }
+        Promise.resolve(req.call(root)).catch(() => {});
+      }
+    }
+
+    function syncFullscreenLabel() {
+      if (!elFullscreen) return;
+      const on = Boolean(document.fullscreenElement || /** @type {any} */ (document).webkitFullscreenElement);
+      elFullscreen.textContent = on ? 'Thoát toàn màn hình' : 'Toàn màn hình';
+      document.body.classList.toggle('is-fullscreen', on);
+    }
+
+    elShot?.addEventListener('click', takeScreenshot);
+    elFullscreen?.addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', syncFullscreenLabel);
+    document.addEventListener('webkitfullscreenchange', syncFullscreenLabel);
+
     elCopy?.addEventListener('click', async () => {
       const text = JSON.stringify(settings);
       try {
@@ -710,28 +857,7 @@
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') throw new Error('bad');
         // Best-effort validation using the same bounds as loadSettings.
-        if ('density' in parsed) settings.density = clamp(Number(parsed.density), 0.7, 1.6);
-        if ('size' in parsed) settings.size = clamp(Number(parsed.size), 0.75, 1.7);
-        if ('glow' in parsed) settings.glow = clamp(Number(parsed.glow), 0.6, 1.9);
-        if ('mouse' in parsed) settings.mouse = clamp(Number(parsed.mouse), 0, 1.8);
-        if ('color' in parsed) settings.color = clamp(Number(parsed.color), 0, 1.6);
-        if ('zoom' in parsed) settings.zoom = clamp(Number(parsed.zoom), 0.7, 1.6);
-        if ('snow' in parsed) settings.snow = toBool(parsed.snow, settings.snow);
-        if ('snowAmount' in parsed) settings.snowAmount = clamp(Number(parsed.snowAmount), 0.2, 2.2);
-        if ('snowSpeed' in parsed) settings.snowSpeed = clamp(Number(parsed.snowSpeed), 0.5, 2);
-        if ('snowSize' in parsed) settings.snowSize = clamp(Number(parsed.snowSize), 0.5, 2);
-        if ('adaptiveSnow' in parsed) settings.adaptiveSnow = toBool(parsed.adaptiveSnow, settings.adaptiveSnow);
-        if ('gyroLook' in parsed) settings.gyroLook = toBool(parsed.gyroLook, settings.gyroLook);
-        if ('wind' in parsed) settings.wind = clamp(Number(parsed.wind), -1, 1);
-        if ('garland' in parsed) settings.garland = toBool(parsed.garland, settings.garland);
-        if ('perf' in parsed) settings.perf = toBool(parsed.perf, settings.perf);
-        if ('sway' in parsed) settings.sway = clamp(Number(parsed.sway), 0, 1.6);
-        if ('freefly' in parsed) settings.freefly = toBool(parsed.freefly, settings.freefly);
-        if ('freeflySpeed' in parsed) settings.freeflySpeed = clamp(Number(parsed.freeflySpeed), 0.2, 2.2);
-        if ('music' in parsed) settings.music = toBool(parsed.music, settings.music);
-        if ('volume' in parsed) settings.volume = clamp(Number(parsed.volume), 0, 1);
-        if ('track' in parsed) settings.track = String(parsed.track || '');
-        if ('shuffle' in parsed) settings.shuffle = toBool(parsed.shuffle, settings.shuffle);
+        mergeSettings(settings, parsed);
 
         onSettingsChange({ rebuild: true });
         setStatusLine('Đã áp dụng cấu hình');
@@ -745,6 +871,8 @@
     // Keyboard shortcuts (avoid when typing in inputs)
     window.addEventListener('keydown', (e) => {
       if (isTypingTarget(e.target)) return;
+      // Leave browser shortcuts (Cmd/Ctrl+R, Ctrl+S, ...) alone.
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const k = String(e.key || '').toLowerCase();
       if (k === 'p') {
         elPanelToggle?.click();
@@ -770,6 +898,18 @@
         e.preventDefault();
       } else if (k === 'n') {
         void ensureTracks().then(() => nextTrack());
+        e.preventDefault();
+      } else if (k === 'b') {
+        void ensureTracks().then(() => prevTrack());
+        e.preventDefault();
+      } else if (k === 's') {
+        takeScreenshot();
+        e.preventDefault();
+      } else if (k === 'h') {
+        toggleFullscreen();
+        e.preventDefault();
+      } else if (k === 'v') {
+        toggleClip();
         e.preventDefault();
       }
     });
@@ -797,6 +937,229 @@
       }
       requestAnimationFrame(raf);
     }
+
+    // Blow into the microphone: loudness becomes a wind gust, a strong blow lights the tree up.
+    const elMic = /** @type {HTMLInputElement|null} */ (document.getElementById('ctl-mic'));
+    let mic = null;
+
+    async function startMic() {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+      const AC = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
+      const ctx = new AC();
+      // Safari creates contexts suspended until resumed from a user gesture.
+      if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      mic = {
+        stream,
+        ctx,
+        analyser,
+        buf: new Uint8Array(analyser.fftSize),
+        gust: 0,
+        holdSince: 0,
+        lastBoost: 0,
+        lastNow: 0,
+        lastWind: NaN,
+        raf: 0,
+      };
+
+      const loop = (now) => {
+        if (!mic) return;
+        const dt = mic.lastNow ? Math.min(100, now - mic.lastNow) : 16.7;
+        mic.lastNow = now;
+
+        // Byte samples are supported everywhere (float needs newer Safari); 128 = silence.
+        mic.analyser.getByteTimeDomainData(mic.buf);
+        let sum = 0;
+        for (let i = 0; i < mic.buf.length; i++) {
+          const v = (mic.buf[i] - 128) / 128;
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / mic.buf.length);
+        // Ignore room noise; a blow on the mic is loud and sustained.
+        const target = clamp((rms - 0.035) / 0.18, 0, 1);
+        const k = target > mic.gust ? 0.35 : 0.04;
+        mic.gust += (target - mic.gust) * (1 - Math.pow(1 - k, dt / 16.7));
+        if (mic.gust > 0.6) mic.holdSince = mic.holdSince || now;
+        else mic.holdSince = 0;
+
+        const dir = settings.wind < 0 ? -1 : 1;
+        const wind = Math.round((settings.wind + dir * mic.gust * 2.2) * 100) / 100;
+        if (wind !== mic.lastWind) {
+          mic.lastWind = wind;
+          window.CD_Scene?.setSettings({ wind }, { rebuild: false });
+        }
+
+        if (mic.holdSince && now - mic.holdSince > 350 && now - mic.lastBoost > 3500) {
+          mic.lastBoost = now;
+          window.CD_Scene?.triggerBoost({ durationMs: 2600, strength: 0.9 });
+          navigator.vibrate?.(40);
+        }
+        mic.raf = requestAnimationFrame(loop);
+      };
+      mic.raf = requestAnimationFrame(loop);
+    }
+
+    function stopMic() {
+      if (!mic) return;
+      cancelAnimationFrame(mic.raf);
+      mic.stream.getTracks().forEach((t) => t.stop());
+      void mic.ctx.close().catch(() => {});
+      mic = null;
+      applyToScene({ rebuild: false });
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && clip) stopClip();
+      if (!mic) return;
+      if (document.hidden) void mic.ctx.suspend?.().catch(() => {});
+      else void mic.ctx.resume?.().catch(() => {});
+    });
+
+    elMic?.addEventListener('change', async () => {
+      if (!elMic.checked) {
+        stopMic();
+        return;
+      }
+      try {
+        await startMic();
+        flashStatus('Thổi nhẹ vào micro để tuyết bay 🌬️', 2600);
+      } catch {
+        elMic.checked = false;
+        flashStatus('Không truy cập được micro', 2200);
+      }
+    });
+
+    // Record a short clip of the canvas (optionally cropped to 9:16) with the background music.
+    const elClip = document.getElementById('ctl-clip');
+    const elClipFmt = /** @type {HTMLSelectElement|null} */ (document.getElementById('ctl-clipfmt'));
+    const CLIP_SECONDS = 10;
+    let clip = null;
+    let audioStream = null;
+
+    function pickMimeType() {
+      const types = ['video/mp4;codecs=avc1', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+      return types.find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || '';
+    }
+
+    function setClipLabel(text) {
+      if (elClip) elClip.textContent = text;
+    }
+
+    function startClip() {
+      const src = /** @type {HTMLCanvasElement|null} */ (document.getElementById('scene'));
+      if (!src || !window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+        flashStatus('Trình duyệt không hỗ trợ quay clip', 2200);
+        return;
+      }
+
+      // Crop rectangle (center) in source pixels.
+      let cw = src.width;
+      let ch = src.height;
+      if (elClipFmt?.value === 'vertical') {
+        if (cw / ch > 9 / 16) cw = Math.round((ch * 9) / 16);
+        else ch = Math.round((cw * 16) / 9);
+      }
+      const scale = Math.min(1, 1920 / Math.max(cw, ch));
+      const out = document.createElement('canvas');
+      out.width = Math.round(cw * scale) & ~1;
+      out.height = Math.round(ch * scale) & ~1;
+      const octx = out.getContext('2d');
+      if (!octx) return;
+      const sx = Math.round((src.width - cw) / 2);
+      const sy = Math.round((src.height - ch) / 2);
+      const caption = `Merry Christmas ${new Date().getFullYear()} ✨`;
+
+      const draw = () => {
+        if (!clip) return;
+        octx.drawImage(src, sx, sy, cw, ch, 0, 0, out.width, out.height);
+        const fs = Math.round(out.height * 0.035);
+        octx.font = `600 ${fs}px ui-sans-serif, system-ui, sans-serif`;
+        octx.textAlign = 'center';
+        octx.fillStyle = 'rgba(255,255,255,0.88)';
+        octx.shadowColor = 'rgba(0,0,0,0.7)';
+        octx.shadowBlur = fs * 0.5;
+        octx.fillText(caption, out.width / 2, out.height - fs * 2.2);
+        octx.shadowBlur = 0;
+        clip.raf = requestAnimationFrame(draw);
+      };
+
+      const stream = out.captureStream(30);
+      try {
+        const media = /** @type {any} */ (audio);
+        if (settings.music && audio && !audio.paused && media.captureStream) {
+          audioStream = audioStream || media.captureStream();
+          audioStream.getAudioTracks().forEach((t) => stream.addTrack(t));
+        }
+      } catch {
+        // Video only.
+      }
+
+      const mimeType = pickMimeType();
+      const recorder = new MediaRecorder(stream, { ...(mimeType ? { mimeType } : {}), videoBitsPerSecond: 8000000 });
+      const chunks = [];
+      clip = { recorder, raf: 0, timer: 0, left: CLIP_SECONDS };
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size) chunks.push(e.data);
+      };
+      recorder.onstop = () => {
+        const type = recorder.mimeType || mimeType || 'video/webm';
+        const ext = type.includes('mp4') ? 'mp4' : 'webm';
+        void saveClip(new Blob(chunks, { type }), `christmas-${Date.now()}.${ext}`);
+      };
+
+      draw();
+      recorder.start(250);
+      setClipLabel(`Dừng (${clip.left}s)`);
+      clip.timer = setInterval(() => {
+        if (!clip) return;
+        clip.left -= 1;
+        if (clip.left <= 0) stopClip();
+        else setClipLabel(`Dừng (${clip.left}s)`);
+      }, 1000);
+    }
+
+    function stopClip() {
+      if (!clip) return;
+      clearInterval(clip.timer);
+      cancelAnimationFrame(clip.raf);
+      if (clip.recorder.state !== 'inactive') clip.recorder.stop();
+      clip = null;
+      setClipLabel(`Quay clip ${CLIP_SECONDS}s`);
+    }
+
+    async function saveClip(blob, filename) {
+      const file = new File([blob], filename, { type: blob.type });
+      // On phones, the share sheet lets people post straight to TikTok/Reels.
+      if (isCoarse && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'Merry Christmas' });
+          return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      flashStatus('Đã lưu clip 🎬', 1800);
+    }
+
+    function toggleClip() {
+      if (clip) stopClip();
+      else startClip();
+    }
+
+    elClip?.addEventListener('click', toggleClip);
 
     // Init
     syncUI();

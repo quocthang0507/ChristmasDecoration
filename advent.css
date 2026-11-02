@@ -1,0 +1,202 @@
+.advent {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 18px;
+  padding: 170px 16px 40px;
+  pointer-events: none;
+}
+
+.advent > * {
+  pointer-events: auto;
+}
+
+.advent__head {
+  text-align: center;
+  color: var(--ui-text-strong);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
+}
+
+.advent__title {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.advent__sub,
+.advent__progress {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ui-text-muted);
+}
+
+.advent__progress {
+  font-variant-numeric: tabular-nums;
+}
+
+.advent__grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  width: min(640px, 100%);
+}
+
+@media (max-width: 600px) {
+  .advent {
+    padding-top: 72px;
+  }
+
+  .advent__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+.advent__door {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  appearance: none;
+  cursor: pointer;
+  border-radius: 14px;
+  min-height: 64px;
+  border: 1px solid var(--ui-border);
+  background: rgba(7, 16, 29, 0.8);
+  background: color-mix(in srgb, var(--scene-bg-0) 80%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--ui-text-strong);
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.advent__door:hover {
+  transform: translateY(-2px);
+  border-color: var(--ui-active-border);
+}
+
+.advent__num {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ui-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.advent__emoji {
+  font-size: clamp(22px, 5vw, 32px);
+}
+
+.advent__door.is-locked {
+  cursor: not-allowed;
+}
+
+.advent__door.is-locked > * {
+  opacity: 0.5;
+}
+
+.advent__door.is-locked:hover {
+  transform: none;
+}
+
+.advent__door.is-today {
+  border-color: rgba(255, 210, 120, 0.7);
+  box-shadow: 0 0 18px rgba(255, 200, 100, 0.35);
+}
+
+.advent__door.is-open {
+  background: rgba(110, 30, 25, 0.75);
+}
+
+.advent__door.is-done {
+  background: rgba(20, 90, 50, 0.75);
+}
+
+.advent__door.is-done::after {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  font-size: 12px;
+  color: #b8f5c8;
+}
+
+.advent__dialog {
+  width: min(380px, calc(100vw - 32px));
+  padding: 0;
+  border-radius: 16px;
+  border: 1px solid var(--ui-border);
+  background: rgba(7, 16, 29, 0.94);
+  color: var(--ui-text-strong);
+}
+
+.advent__dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.advent__dialog[open] {
+  animation: advent-pop 260ms ease-out;
+}
+
+@keyframes advent-pop {
+  from {
+    transform: scale(0.85) rotateX(30deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .advent__dialog[open] {
+    animation: none;
+  }
+}
+
+.advent__dlg {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.advent__dlg-day {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.advent__dlg-emoji {
+  font-size: 56px;
+  line-height: 1.1;
+}
+
+.advent__dlg-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.advent__dlg-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ui-text);
+}
+
+.advent__dlg-done {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--ui-text);
+}

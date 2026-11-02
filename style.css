@@ -114,6 +114,24 @@
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
 }
 
+@media (max-width: 480px) {
+  .cd-hud__grid {
+    gap: 10px;
+  }
+
+  .cd-hud__cell {
+    min-width: 56px;
+  }
+}
+
+.cd-hud__message {
+  font-size: clamp(18px, 4.5vw, 32px);
+  font-weight: 650;
+  color: var(--ui-text-strong);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
+}
+
+:root[data-theme='light'] .cd-hud__message,
 :root[data-theme='light'] .cd-hud__event,
 :root[data-theme='light'] .cd-hud__value,
 :root[data-theme='light'] .cd-hud__label {

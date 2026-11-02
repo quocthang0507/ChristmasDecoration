@@ -105,6 +105,11 @@
       this.colorShiftSpeed = colorShiftSpeed;
       this.kind = kind || 'tree';
       this.drift = (Math.random() * 2 - 1) * 0.75;
+      // Per-frame projected position (screen x/y, perspective scale, depth).
+      this._x = 0;
+      this._y = 0;
+      this._s = 1;
+      this._z = 0;
     }
   }
 
@@ -528,7 +533,42 @@
     return { x: r * Math.cos(a), y: u, z: r * Math.sin(a) };
   }
 
-  function drawLight(p, now) {
+  // Pre-rendered glow sprites keyed by (quantized) color. Replaces creating a radial gradient
+  // per light per frame, which dominated frame time with thousands of lights.
+  const GLOW_SPRITE_SIZE = 64;
+  const GLOW_SPRITE_MAX = 512;
+  const glowSprites = new Map();
+
+  function glowSprite(col) {
+    const r = Math.min(255, (col[0] + 4) & ~7);
+    const g = Math.min(255, (col[1] + 4) & ~7);
+    const b = Math.min(255, (col[2] + 4) & ~7);
+    const key = (r << 16) | (g << 8) | b;
+    let sprite = glowSprites.get(key);
+    if (sprite) return sprite;
+    if (glowSprites.size >= GLOW_SPRITE_MAX) glowSprites.clear();
+
+    sprite = document.createElement('canvas');
+    sprite.width = GLOW_SPRITE_SIZE;
+    sprite.height = GLOW_SPRITE_SIZE;
+    const sctx = sprite.getContext('2d');
+    const h = GLOW_SPRITE_SIZE / 2;
+    const c = [r, g, b];
+    // Same profile as the original gradient at full twinkle: gradient radius 5.2·rr, visible disc 2.1·rr.
+    const grad = sctx.createRadialGradient(h, h, 0, h, h, (h * 5.2) / 2.1);
+    grad.addColorStop(0, rgb(c, 0.9));
+    grad.addColorStop(0.35, rgb(c, 0.34));
+    grad.addColorStop(1, rgb(c, 0.24));
+    sctx.fillStyle = grad;
+    sctx.beginPath();
+    sctx.arc(h, h, h, 0, Math.PI * 2);
+    sctx.fill();
+
+    glowSprites.set(key, sprite);
+    return sprite;
+  }
+
+  function drawLight(p, now, x, y, scale) {
     const tw = 0.55 + 0.45 * Math.sin(now * 0.001 * p.twinkleSpeed + p.phase);
     const boost = boostFactor01(now) * (state.boost.strength || 0);
     const glowMul =
@@ -551,27 +591,24 @@
       ];
     }
 
-    const coreA = 0.55 + tw * 0.35;
-    const outerA = 0.12 + tw * 0.12;
-
     const rr = Math.max(0.6, p.radius) * glowMul * screenMul;
 
     const spreadMul = screenMul < 0.9 ? 0.86 : 1;
 
-    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rr * 5.2 * spreadMul);
-    grad.addColorStop(0, rgb(col, coreA));
-    grad.addColorStop(0.35, rgb(col, 0.22 + tw * 0.12));
-    grad.addColorStop(1, rgb(col, outerA));
-
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(0, 0, rr * 2.1 * spreadMul, 0, Math.PI * 2);
-    ctx.fill();
+    // Halo: the sprite is baked at full twinkle; scaling alpha by the core ratio keeps all stops within ~0.03.
+    const halo = rr * 2.1 * spreadMul * scale;
+    ctx.globalAlpha = (0.55 + tw * 0.35) / 0.9;
+    ctx.drawImage(glowSprite(col), x - halo, y - halo, halo * 2, halo * 2);
+    ctx.globalAlpha = 1;
 
     ctx.fillStyle = rgb(col, 0.9);
     ctx.beginPath();
-    ctx.arc(0, 0, Math.max(0.65, rr * 0.72), 0, Math.PI * 2);
+    ctx.arc(x, y, Math.max(0.65, rr * 0.72) * scale, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  function byDepth(a, b) {
+    return a._z - b._z;
   }
 
   function drawGarlandWires(now) {
@@ -1125,22 +1162,35 @@
     // Draw garland wire strands before bulbs.
     drawGarlandWires(now);
 
-    const ordered = lights
-      .map((p) => {
-        const ry = rotateY(p.x, p.z, state.yaw + swayA * p.drift);
-        const rx = rotateX(p.y - state.h * 0.15, ry.z, state.pitch);
-        const proj = projectPoint(ry.x, rx.y + state.h * 0.15, rx.z);
-        return { p, proj, z: rx.z };
-      })
-      .sort((a, b) => a.z - b.z);
-
-    for (const it of ordered) {
-      ctx.save();
-      ctx.translate(it.proj.x, it.proj.y);
-      ctx.scale(it.proj.s, it.proj.s);
-      drawLight(it.p, now);
-      ctx.restore();
+    // Project in place (same math as rotateY → rotateX → projectPoint) without per-light allocations,
+    // then sort the (nearly sorted) array back-to-front.
+    const yOff = state.h * 0.15;
+    const halfW = state.w * 0.5;
+    const cosP = Math.cos(state.pitch);
+    const sinP = Math.sin(state.pitch);
+    for (let i = 0; i < lights.length; i++) {
+      const p = lights[i];
+      const a = state.yaw + swayA * p.drift;
+      const c = Math.cos(a);
+      const sn = Math.sin(a);
+      const x = p.x * c - p.z * sn;
+      const z = p.x * sn + p.z * c;
+      const y0 = p.y - yOff;
+      const z2 = y0 * sinP + z * cosP;
+      const dz = state.fov / (state.fov + z2);
+      p._x = halfW + x * dz;
+      p._y = y0 * cosP - z * sinP + yOff;
+      p._s = dz;
+      p._z = z2;
     }
+    lights.sort(byDepth);
+
+    ctx.save();
+    for (let i = 0; i < lights.length; i++) {
+      const p = lights[i];
+      drawLight(p, now, p._x, p._y, p._s);
+    }
+    ctx.restore();
 
     // Always ensure snow count to clear array when disabled
     ensureSnowCount(now);
